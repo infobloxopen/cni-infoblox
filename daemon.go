@@ -23,12 +23,12 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
-	"path/filepath"
 	"runtime"
 //	"sync"
 
 	"github.com/appc/cni/pkg/skel"
 	"github.com/appc/cni/pkg/types"
+	ibclient "github.com/infobloxopen/infoblox-go-client"
 )
 
 type IPAMConfig struct {
@@ -45,8 +45,6 @@ type NetConfig struct {
     IPAM *IPAMConfig `json:"ipam"`
 }            
 
-
-type InfobloxDriver struct {}
 
 type Infoblox struct {
 	//	mux    sync.Mutex
@@ -67,6 +65,15 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) error {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
+	ipTmp := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
+	fmt.Printf("RequestNetwork: '%s', '%s'\n", conf.IPAM.NetworkView, ipTmp.String())
+	subnet, _ := ib.Drv.RequestNetwork(conf.IPAM.NetworkView, ipTmp.String())
+		
+	fmt.Printf("RequestAddress: '%s', '%s'\n", conf.IPAM.NetworkView, subnet)
+	ip, _ := ib.Drv.RequestAddress(conf.IPAM.NetworkView, subnet, "")
+	
+	//fmt.Printf("In Allocate(), args: '%s'\n", args)
+	//fmt.Printf("In Allocate(), conf: '%s'\n", conf)
 /*	
 	clientID := args.ContainerID + "/" + conf.Name
 	l, err := AcquireLease(clientID, args.Netns, args.IfName)
@@ -82,10 +89,13 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) error {
 
 	d.setLease(args.ContainerID, conf.Name, l)
 */
-	_, ipn, _ := net.ParseCIDR("172.18.1.3/24")
+	ipn, _ := types.ParseCIDR(subnet)
+	ipn.IP = net.ParseIP(ip)
+	fmt.Printf("ip: '%s'\n", ip)
+	fmt.Printf("ipn: '%s'\n", *ipn)
 	result.IP4 = &types.IPConfig{
 		IP:      *ipn,
-		Gateway: net.ParseIP("172.18.1.1"),
+		//Gateway: net.ParseIP("172.18.1.1"),
 		//Routes: []Route{}
 	}
 
@@ -156,26 +166,116 @@ func getListener() (net.Listener, error) {
 	}
 }
 */
-func getListener() (net.Listener, error) {
-	if err := os.MkdirAll(filepath.Dir(socketPath), 0700); err != nil {
-		return nil, err
+
+
+func dirExists(dirname string) (bool, error) {
+	fileInfo, err := os.Stat(dirname)
+	if err == nil {
+		if fileInfo.IsDir() {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	} else if os.IsNotExist(err) {
+		return false, nil
 	}
-	return net.Listen("unix", socketPath)
+	return false, err
+}
+
+func createDir(dirname string) error {
+	return os.MkdirAll(dirname, 0700)
+}
+
+func fileExists(filePath string) (bool, error) {
+	_, err := os.Stat(filePath)
+
+	if err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return true, err
+}
+
+func deleteFile(filePath string) error {
+	return os.Remove(filePath)
+}
+
+func setupSocket(pluginDir string, driverName string) string {
+	exists, err := dirExists(pluginDir)
+	if err != nil {
+		log.Panicf("Stat Plugin Directory error '%s'", err)
+		os.Exit(1)
+	}
+	if !exists {
+		err = createDir(pluginDir)
+		if err != nil {
+			log.Panicf("Create Plugin Directory error: '%s'", err)
+			os.Exit(1)
+		}
+		log.Printf("Created Plugin Directory: '%s'", pluginDir)
+	}
+
+	socketFile := pluginDir + "/" + driverName + ".sock"
+	fmt.Printf("socketFile: '%s'\n", socketFile)
+	exists, err = fileExists(socketFile)
+	if err != nil {
+		log.Panicf("Stat Socket File error: '%s'", err)
+		os.Exit(1)
+	}
+	if exists {
+		err = deleteFile(socketFile)
+		if err != nil {
+			log.Panicf("Delete Socket File error: '%s'", err)
+			os.Exit(1)
+		}
+		log.Printf("Deleted Old Socket File: '%s'", socketFile)
+	}
+
+	return socketFile
+}
+
+func getListener(pluginDir string, driverName string) (net.Listener, error) {
+	fmt.Printf("pluginDir: '%s'\n", pluginDir)
+	fmt.Printf("driverName: '%s'\n", driverName)
+	
+	socketFile := setupSocket(pluginDir, driverName)
+
+	return net.Listen("unix", socketFile)
 }
 
 
-func runDaemon() {
+func runDaemon(config *Config) {
 	// since other goroutines (on separate threads) will change namespaces,
 	// ensure the RPC server does not get scheduled onto those
 	runtime.LockOSThread()
 
-	l, err := getListener()
+	fmt.Printf("Config is '%s'\n", config)
+
+	conn, err := ibclient.NewConnector(
+		config.GridHost,
+		config.WapiVer,
+		config.WapiPort,
+		config.WapiUsername,
+		config.WapiPassword,
+		config.SslVerify,
+		config.HttpRequestTimeout,
+		config.HttpPoolConnections,
+		config.HttpPoolMaxSize)
+
+	l, err := getListener(config.PluginDir, config.DriverName)
+
+	objMgr := ibclient.NewObjectManager(conn, "RktEngineID")
+
+	ibDrv := NewInfobloxDriver(objMgr)
+		
 	if err != nil {
 		log.Printf("Error getting listener: %v", err)
 		return
 	}
 
-	ib := newInfoblox(new(InfobloxDriver))
+	ib := newInfoblox(ibDrv)
 	rpc.Register(ib)
 	rpc.HandleHTTP()
 	http.Serve(l, nil)

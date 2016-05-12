@@ -17,7 +17,6 @@ package main
 import (
 	"fmt"
 	"net/rpc"
-	"os"
 	"path/filepath"
 
 	"github.com/appc/cni/pkg/skel"
@@ -27,8 +26,9 @@ import (
 const socketPath = "/run/cni/infoblox.sock"
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "daemon" {
-		runDaemon()
+	config := LoadConfig()
+	if config.Daemon {
+		runDaemon(config)
 	} else {
 		skel.PluginMain(cmdAdd, cmdDel)
 	}
