@@ -19,8 +19,8 @@ import (
 	"net/rpc"
 	"path/filepath"
 
-	"github.com/appc/cni/pkg/skel"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 const socketPath = "/run/cni/infoblox.sock"

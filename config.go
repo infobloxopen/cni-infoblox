@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 )
 
 const (
@@ -36,7 +35,6 @@ type Config struct {
 
 func LoadConfig() (config *Config) {
 	config = new(Config)
-	fmt.Printf("Args are: '%s'\n", flag.Args())
 
 	flag.BoolVar(&config.Daemon, "daemon", false, "Daemon Mode")
 	flag.StringVar(&config.GridHost, "grid-host", "192.168.124.200", "IP of Infoblox Grid Host")
@@ -53,7 +51,6 @@ func LoadConfig() (config *Config) {
 	flag.StringVar(&config.DriverName, "driver-name", "infoblox", "Name of Infoblox IPAM driver")
 
 	flag.Parse()
-	fmt.Printf("Args are: '%s'\n", flag.Args())
 
 	return config
 }
