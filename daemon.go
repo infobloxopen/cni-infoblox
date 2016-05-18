@@ -38,6 +38,7 @@ type IPAMConfig struct {
 	PrefixLength uint `json:"prefix-length"`
 	Subnet types.IPNet `json:"subnet"`
 	Gateway net.IP `json:"gateway"`
+	Routes []types.Route `json:"routes"`
 }
 
 type NetConfig struct {
@@ -95,8 +96,8 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) error {
 	fmt.Printf("ipn: '%s'\n", *ipn)
 	result.IP4 = &types.IPConfig{
 		IP:      *ipn,
-		//Gateway: net.ParseIP("172.18.1.1"),
-		//Routes: []Route{}
+		Gateway: conf.IPAM.Gateway,
+		Routes: conf.IPAM.Routes,
 	}
 
 	return nil
