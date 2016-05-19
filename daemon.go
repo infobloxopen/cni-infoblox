@@ -97,7 +97,7 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result)(err error
 		mac = ifaceInfo.iface.HardwareAddr.String()
 	}
 	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", conf.IPAM.NetworkView, subnet, mac)
-	ip, _ := ib.Drv.RequestAddress(conf.IPAM.NetworkView, subnet, mac)
+	ip, _ := ib.Drv.RequestAddress(conf.IPAM.NetworkView, subnet, mac, args.ContainerID)
 
 	//fmt.Printf("In Allocate(), args: '%s'\n", args)
 	//fmt.Printf("In Allocate(), conf: '%s'\n", conf)
@@ -119,10 +119,12 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result)(err error
 // and sends a release msg to the DHCP server.
 func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
 	conf := NetConfig{}
+	fmt.Printf("Infoblox.Release called\n")
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
+//	ref, _ := ib.Drv.ReleaseIP
 	return nil
 /*
 	if l := d.getLease(args.ContainerID, conf.Name); l != nil {

@@ -13,20 +13,18 @@ type InfobloxDriver struct {
 	objMgr              *ibclient.ObjectManager
 }
 
-func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, macAddr string) (string,  error) {
+func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, macAddr string, vmID string) (string,  error) {
 	if len(macAddr) == 0 {
 		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.\n")
 	}
-	fixedAddr, _ := ibDrv.objMgr.AllocateIP(netviewName, cidr, macAddr)
+	fixedAddr, _ := ibDrv.objMgr.AllocateIP(netviewName, cidr, macAddr, vmID)
 
 	fmt.Printf("RequestAddress: fixedAddr is '%s'\n", *fixedAddr)
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
 }
 
 /*
-func (ibDrv *InfobloxDriver) ReleaseAddress(r interface{}) (map[string]interface{}, error) {
-	v := r.(*ipamsapi.ReleaseAddressRequest)
-	log.Printf("Releasing Address '%s' from Pool '%s'\n", v.Address, v.PoolID)
+func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ) (map[string]interface{}, error) {
 	network := ibclient.BuildNetworkFromRef(v.PoolID)
 	ref, _ := ibDrv.objMgr.ReleaseIP(network.NetviewName, v.Address)
 	if ref == "" {
