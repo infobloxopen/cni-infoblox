@@ -24,8 +24,9 @@ import (
 	"net/rpc"
 	"os"
 	"runtime"
-//	"sync"
+	"sync"
 
+	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	ibclient "github.com/infobloxopen/infoblox-go-client"
@@ -44,7 +45,7 @@ type IPAMConfig struct {
 type NetConfig struct {
     Name string      `json:"name"`
     IPAM *IPAMConfig `json:"ipam"`
-}            
+}
 
 
 type Infoblox struct {
@@ -59,37 +60,48 @@ func newInfoblox(drv *InfobloxDriver) *Infoblox {
 	}
 }
 
+type InterfaceInfo struct {
+	iface  *net.Interface
+	wg sync.WaitGroup
+}
+
 // Allocate acquires an IP from Infoblox for a specified container.
-func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) error {
+func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result)(err error){
 	conf := NetConfig{}
-	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
+	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
 	ipTmp := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
 	fmt.Printf("RequestNetwork: '%s', '%s'\n", conf.IPAM.NetworkView, ipTmp.String())
 	subnet, _ := ib.Drv.RequestNetwork(conf.IPAM.NetworkView, ipTmp.String())
-		
-	fmt.Printf("RequestAddress: '%s', '%s'\n", conf.IPAM.NetworkView, subnet)
-	ip, _ := ib.Drv.RequestAddress(conf.IPAM.NetworkView, subnet, "")
-	
+
+	ifaceInfo := &InterfaceInfo{}
+	errCh := make(chan error, 1)
+	ifaceInfo.wg.Add(1)
+	go func() {
+		errCh <- ns.WithNetNSPath(args.Netns, true, func(_ *os.File) error {
+			defer ifaceInfo.wg.Done()
+
+			ifaceInfo.iface, err = net.InterfaceByName(args.IfName)
+			if err != nil {
+				return fmt.Errorf("error looking up interface '%s': '%s'", args.IfName, err)
+			}
+			return nil
+		})
+	}()
+	mac := ""
+	if err = <-errCh; err != nil {
+		fmt.Printf("%s\n", err)
+	} else {
+		mac = ifaceInfo.iface.HardwareAddr.String()
+	}
+	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", conf.IPAM.NetworkView, subnet, mac)
+	ip, _ := ib.Drv.RequestAddress(conf.IPAM.NetworkView, subnet, mac)
+
 	//fmt.Printf("In Allocate(), args: '%s'\n", args)
 	//fmt.Printf("In Allocate(), conf: '%s'\n", conf)
-/*	
-	clientID := args.ContainerID + "/" + conf.Name
-	l, err := AcquireLease(clientID, args.Netns, args.IfName)
-	if err != nil {
-		return err
-	}
 
-	ipn, err := l.IPNet()
-	if err != nil {
-		l.Stop()
-		return err
-	}
-
-	d.setLease(args.ContainerID, conf.Name, l)
-*/
 	ipn, _ := types.ParseCIDR(subnet)
 	ipn.IP = net.ParseIP(ip)
 	fmt.Printf("ip: '%s'\n", ip)
@@ -270,7 +282,7 @@ func runDaemon(config *Config) {
 	objMgr := ibclient.NewObjectManager(conn, "RktEngineID")
 
 	ibDrv := NewInfobloxDriver(objMgr)
-		
+
 	if err != nil {
 		log.Printf("Error getting listener: %v", err)
 		return
