@@ -23,12 +23,15 @@ type GridConfig struct {
 }
 
 type DriverConfig struct {
-	PluginDir              string
-	DriverName             string
+	PluginDir        string
+	DriverName       string
+	NetworkView      string
+	NetworkContainer string
+	PrefixLength     uint
 }
 
 type Config struct {
-	Daemon       bool
+	Daemon bool
 	GridConfig
 	DriverConfig
 }
@@ -43,6 +46,9 @@ func LoadConfig() (config *Config) {
 	flag.StringVar(&config.WapiUsername, "wapi-username", "", "Infoblox WAPI Username")
 	flag.StringVar(&config.WapiPassword, "wapi-password", "", "Infoblox WAPI Password")
 	flag.StringVar(&config.SslVerify, "ssl-verify", "false", "Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate.")
+	flag.StringVar(&config.NetworkView, "network-view", "default", "Infoblox Network View")
+	flag.StringVar(&config.NetworkContainer, "network-container", "172.18.0.0/16", "Subnets will be allocated from this container if subnet is not specified in IPAM config")
+	flag.UintVar(&config.PrefixLength, "prefix-length", 24, "The default CIDR prefix length when allocating a subnet from Network Container")
 	config.HttpRequestTimeout = HTTP_REQUEST_TIMEOUT
 	config.HttpPoolConnections = HTTP_POOL_CONNECTIONS
 	config.HttpPoolMaxSize = HTTP_POOL_MAX_SIZE

@@ -16,7 +16,7 @@ package main
 
 import (
 	"encoding/json"
-//	"errors"
+	//	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -33,20 +33,19 @@ import (
 )
 
 type IPAMConfig struct {
-	Type string `json:"type"`
-	NetworkView string `json:"network-view"`
-	NetworkContainer string `json:"network-container"`
-	PrefixLength uint `json:"prefix-length"`
-	Subnet types.IPNet `json:"subnet"`
-	Gateway net.IP `json:"gateway"`
-	Routes []types.Route `json:"routes"`
+	Type             string        `json:"type"`
+	NetworkView      string        `json:"network-view"`
+	NetworkContainer string        `json:"network-container"`
+	PrefixLength     uint          `json:"prefix-length"`
+	Subnet           types.IPNet   `json:"subnet"`
+	Gateway          net.IP        `json:"gateway"`
+	Routes           []types.Route `json:"routes"`
 }
 
 type NetConfig struct {
-    Name string      `json:"name"`
-    IPAM *IPAMConfig `json:"ipam"`
+	Name string      `json:"name"`
+	IPAM *IPAMConfig `json:"ipam"`
 }
-
 
 type Infoblox struct {
 	//	mux    sync.Mutex
@@ -61,20 +60,24 @@ func newInfoblox(drv *InfobloxDriver) *Infoblox {
 }
 
 type InterfaceInfo struct {
-	iface  *net.Interface
-	wg sync.WaitGroup
+	iface *net.Interface
+	wg    sync.WaitGroup
 }
 
 // Allocate acquires an IP from Infoblox for a specified container.
-func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result)(err error){
+func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err error) {
 	conf := NetConfig{}
 	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
-	ipTmp := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
-	fmt.Printf("RequestNetwork: '%s', '%s'\n", conf.IPAM.NetworkView, ipTmp.String())
-	subnet, _ := ib.Drv.RequestNetwork(conf.IPAM.NetworkView, ipTmp.String())
+	cidr := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
+	fmt.Printf("RequestNetwork: '%s', '%s'\n", conf.IPAM.NetworkView, cidr.String())
+	netviewName := conf.IPAM.NetworkView
+	if netviewName == "" {
+		netviewName = ib.Drv.networkView
+	}
+	subnet, gw, _ := ib.Drv.RequestNetwork(conf)
 
 	ifaceInfo := &InterfaceInfo{}
 	errCh := make(chan error, 1)
@@ -96,8 +99,8 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result)(err error
 	} else {
 		mac = ifaceInfo.iface.HardwareAddr.String()
 	}
-	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", conf.IPAM.NetworkView, subnet, mac)
-	ip, _ := ib.Drv.RequestAddress(conf.IPAM.NetworkView, subnet, mac, args.ContainerID)
+	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", netviewName, subnet, mac)
+	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, mac, args.ContainerID)
 
 	//fmt.Printf("In Allocate(), args: '%s'\n", args)
 	//fmt.Printf("In Allocate(), conf: '%s'\n", conf)
@@ -107,9 +110,10 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result)(err error
 	fmt.Printf("ip: '%s'\n", ip)
 	fmt.Printf("ipn: '%s'\n", *ipn)
 	result.IP4 = &types.IPConfig{
-		IP:      *ipn,
-		Gateway: conf.IPAM.Gateway,
-		Routes: conf.IPAM.Routes,
+		IP: *ipn,
+		//		Gateway: conf.IPAM.Gateway,
+		Gateway: net.ParseIP(gw),
+		Routes:  conf.IPAM.Routes,
 	}
 
 	return nil
@@ -124,16 +128,16 @@ func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
-//	ref, _ := ib.Drv.ReleaseIP
+	//	ref, _ := ib.Drv.ReleaseIP
 	return nil
-/*
-	if l := d.getLease(args.ContainerID, conf.Name); l != nil {
-		l.Stop()
-		return nil
-	}
+	/*
+		if l := d.getLease(args.ContainerID, conf.Name); l != nil {
+			l.Stop()
+			return nil
+		}
 
-	return fmt.Errorf("lease not found: %v/%v", args.ContainerID, conf.Name)
-*/
+		return fmt.Errorf("lease not found: %v/%v", args.ContainerID, conf.Name)
+	*/
 }
 
 /*
@@ -181,7 +185,6 @@ func getListener() (net.Listener, error) {
 	}
 }
 */
-
 
 func dirExists(dirname string) (bool, error) {
 	fileInfo, err := os.Stat(dirname)
@@ -254,12 +257,11 @@ func setupSocket(pluginDir string, driverName string) string {
 func getListener(pluginDir string, driverName string) (net.Listener, error) {
 	fmt.Printf("pluginDir: '%s'\n", pluginDir)
 	fmt.Printf("driverName: '%s'\n", driverName)
-	
+
 	socketFile := setupSocket(pluginDir, driverName)
 
 	return net.Listen("unix", socketFile)
 }
-
 
 func runDaemon(config *Config) {
 	// since other goroutines (on separate threads) will change namespaces,
@@ -281,9 +283,9 @@ func runDaemon(config *Config) {
 
 	l, err := getListener(config.PluginDir, config.DriverName)
 
-	objMgr := ibclient.NewObjectManager(conn, "RktEngineID")
+	objMgr := ibclient.NewObjectManager(conn, "Rkt", "RktEngineID")
 
-	ibDrv := NewInfobloxDriver(objMgr)
+	ibDrv := NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 
 	if err != nil {
 		log.Printf("Error getting listener: %v", err)

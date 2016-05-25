@@ -13,14 +13,10 @@ WAPI_VERSION="2.0"
 #SSL_VERIFY="./infoblox-localdomain.crt"
 SSL_VERIFY=false
 #SSL_VERIFY="./crap.crt"
-GLOBAL_VIEW="default"
-GLOBAL_CONTAINER="172.18.0.0/16"
-GLOBAL_PREFIX=24
-LOCAL_VIEW="yko_openstack"
-LOCAL_CONTAINER="192.168.0.0/24,192.169.0.0/24"
-LOCAL_PREFIX=25
+NETWORK_VIEW="yko_openstack"
+NETWORK_CONTAINER="192.168.0.0/24,192.169.0.0/24"
+PREFIX_LENGTH=25
 
 
 
-./cni-infoblox --daemon=true --grid-host=${GRID_HOST} --wapi-port=${WAPI_PORT} --wapi-username=${WAPI_USERNAME} --wapi-password=${WAPI_PASSWORD} --wapi-version=${WAPI_VERSION} --plugin-dir=${PLUGIN_DIR} --driver-name=${DRIVER_NAME} --ssl-verify=${SSL_VERIFY}
-
+./cni-infoblox --daemon=true --grid-host=${GRID_HOST} --wapi-port=${WAPI_PORT} --wapi-username=${WAPI_USERNAME} --wapi-password=${WAPI_PASSWORD} --wapi-version=${WAPI_VERSION} --plugin-dir=${PLUGIN_DIR} --driver-name=${DRIVER_NAME} --ssl-verify=${SSL_VERIFY} --network-view=${NETWORK_VIEW} --network-container=${NETWORK_CONTAINER} --prefix-length=${PREFIX_LENGTH}
