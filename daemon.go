@@ -64,6 +64,34 @@ type InterfaceInfo struct {
 	wg    sync.WaitGroup
 }
 
+
+func getMacAddress(args *skel.CmdArgs) (mac string) {
+	var err error
+	ifaceInfo := &InterfaceInfo{}
+	errCh := make(chan error, 1)
+	ifaceInfo.wg.Add(1)
+	go func() {
+		errCh <- ns.WithNetNSPath(args.Netns, true, func(_ *os.File) error {
+			defer ifaceInfo.wg.Done()
+
+			ifaceInfo.iface, err = net.InterfaceByName(args.IfName)
+			if err != nil {
+				return fmt.Errorf("error looking up interface '%s': '%s'", args.IfName, err)
+			}
+			return nil
+		})
+	}()
+
+	if err = <-errCh; err != nil {
+		fmt.Printf("%s\n", err)
+	} else {
+		mac = ifaceInfo.iface.HardwareAddr.String()
+	}
+
+	return mac
+}
+
+
 // Allocate acquires an IP from Infoblox for a specified container.
 func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err error) {
 	conf := NetConfig{}
@@ -79,26 +107,8 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 	}
 	subnet, gw, _ := ib.Drv.RequestNetwork(conf)
 
-	ifaceInfo := &InterfaceInfo{}
-	errCh := make(chan error, 1)
-	ifaceInfo.wg.Add(1)
-	go func() {
-		errCh <- ns.WithNetNSPath(args.Netns, true, func(_ *os.File) error {
-			defer ifaceInfo.wg.Done()
+	mac := getMacAddress(args)
 
-			ifaceInfo.iface, err = net.InterfaceByName(args.IfName)
-			if err != nil {
-				return fmt.Errorf("error looking up interface '%s': '%s'", args.IfName, err)
-			}
-			return nil
-		})
-	}()
-	mac := ""
-	if err = <-errCh; err != nil {
-		fmt.Printf("%s\n", err)
-	} else {
-		mac = ifaceInfo.iface.HardwareAddr.String()
-	}
 	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", netviewName, subnet, mac)
 	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, mac, args.ContainerID)
 
@@ -123,10 +133,13 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 // and sends a release msg to the DHCP server.
 func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
 	conf := NetConfig{}
-	fmt.Printf("Infoblox.Release called\n")
+	fmt.Printf("Infoblox.Release called, args '%v'\n", *args)
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
+
+	mac := getMacAddress(args)
+	fmt.Printf("Infoblox.Release called, mac is '%s'\n", mac)
 
 	//	ref, _ := ib.Drv.ReleaseIP
 	return nil
