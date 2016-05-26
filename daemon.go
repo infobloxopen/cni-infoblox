@@ -34,6 +34,7 @@ import (
 
 type IPAMConfig struct {
 	Type             string        `json:"type"`
+	SocketDir        string        `json:"socket-dir"`
 	NetworkView      string        `json:"network-view"`
 	NetworkContainer string        `json:"network-container"`
 	PrefixLength     uint          `json:"prefix-length"`
@@ -98,11 +99,11 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 	}
 
 	cidr := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
-	fmt.Printf("RequestNetwork: '%s', '%s'\n", conf.IPAM.NetworkView, cidr.String())
 	netviewName := conf.IPAM.NetworkView
 	if netviewName == "" {
 		netviewName = ib.Drv.networkView
 	}
+	log.Printf("RequestNetwork: '%s', '%s'\n", netviewName, cidr.String())
 	subnet, gw, _ := ib.Drv.RequestNetwork(conf)
 
 	mac := getMacAddress(args)
@@ -145,125 +146,8 @@ func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
 	return err
 }
 
-/*
-func (d *DHCP) getLease(contID, netName string) *DHCPLease {
-	d.mux.Lock()
-	defer d.mux.Unlock()
-
-	// TODO(eyakubovich): hash it to avoid collisions
-	l, ok := d.leases[contID+netName]
-	if !ok {
-		return nil
-	}
-	return l
-}
-
-func (d *DHCP) setLease(contID, netName string, l *DHCPLease) {
-	d.mux.Lock()
-	defer d.mux.Unlock()
-
-	// TODO(eyakubovich): hash it to avoid collisions
-	d.leases[contID+netName] = l
-}
-
-func getListener() (net.Listener, error) {
-	l, err := activation.Listeners(true)
-	if err != nil {
-		return nil, err
-	}
-
-	switch {
-	case len(l) == 0:
-		if err := os.MkdirAll(filepath.Dir(socketPath), 0700); err != nil {
-			return nil, err
-		}
-		return net.Listen("unix", socketPath)
-
-	case len(l) == 1:
-		if l[0] == nil {
-			return nil, fmt.Errorf("LISTEN_FDS=1 but no FD found")
-		}
-		return l[0], nil
-
-	default:
-		return nil, fmt.Errorf("Too many (%v) FDs passed through socket activation", len(l))
-	}
-}
-*/
-
-func dirExists(dirname string) (bool, error) {
-	fileInfo, err := os.Stat(dirname)
-	if err == nil {
-		if fileInfo.IsDir() {
-			return true, nil
-		} else {
-			return false, nil
-		}
-	} else if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
-func createDir(dirname string) error {
-	return os.MkdirAll(dirname, 0700)
-}
-
-func fileExists(filePath string) (bool, error) {
-	_, err := os.Stat(filePath)
-
-	if err == nil {
-		return true, nil
-	} else if os.IsNotExist(err) {
-		return false, nil
-	}
-
-	return true, err
-}
-
-func deleteFile(filePath string) error {
-	return os.Remove(filePath)
-}
-
-func setupSocket(pluginDir string, driverName string) string {
-	exists, err := dirExists(pluginDir)
-	if err != nil {
-		log.Panicf("Stat Plugin Directory error '%s'", err)
-		os.Exit(1)
-	}
-	if !exists {
-		err = createDir(pluginDir)
-		if err != nil {
-			log.Panicf("Create Plugin Directory error: '%s'", err)
-			os.Exit(1)
-		}
-		log.Printf("Created Plugin Directory: '%s'", pluginDir)
-	}
-
-	socketFile := pluginDir + "/" + driverName + ".sock"
-	fmt.Printf("socketFile: '%s'\n", socketFile)
-	exists, err = fileExists(socketFile)
-	if err != nil {
-		log.Panicf("Stat Socket File error: '%s'", err)
-		os.Exit(1)
-	}
-	if exists {
-		err = deleteFile(socketFile)
-		if err != nil {
-			log.Panicf("Delete Socket File error: '%s'", err)
-			os.Exit(1)
-		}
-		log.Printf("Deleted Old Socket File: '%s'", socketFile)
-	}
-
-	return socketFile
-}
-
-func getListener(pluginDir string, driverName string) (net.Listener, error) {
-	fmt.Printf("pluginDir: '%s'\n", pluginDir)
-	fmt.Printf("driverName: '%s'\n", driverName)
-
-	socketFile := setupSocket(pluginDir, driverName)
+func getListener(driverSocket *DriverSocket) (net.Listener, error) {
+	socketFile := driverSocket.SetupSocket()
 
 	return net.Listen("unix", socketFile)
 }
@@ -286,7 +170,10 @@ func runDaemon(config *Config) {
 		config.HttpPoolConnections,
 		config.HttpPoolMaxSize)
 
-	l, err := getListener(config.PluginDir, config.DriverName)
+	log.Printf("Socket Dir: '%s'\n", config.SocketDir)
+	log.Printf("Driver Name: '%s'\n", config.DriverName)
+	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
+	l, err := getListener(driverSocket)
 
 	objMgr := ibclient.NewObjectManager(conn, "Rkt", "RktEngineID")
 

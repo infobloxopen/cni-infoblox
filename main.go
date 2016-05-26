@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/rpc"
 	"path/filepath"
@@ -22,8 +23,6 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 )
-
-const socketPath = "/run/cni/infoblox.sock"
 
 func main() {
 	config := LoadConfig()
@@ -36,6 +35,7 @@ func main() {
 
 func cmdAdd(args *skel.CmdArgs) error {
 	result := types.Result{}
+
 	if err := rpcCall("Infoblox.Allocate", args, &result); err != nil {
 		return err
 	}
@@ -51,7 +51,12 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func rpcCall(method string, args *skel.CmdArgs, result interface{}) error {
-	client, err := rpc.DialHTTP("unix", socketPath)
+	conf := NetConfig{}
+	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
+		return fmt.Errorf("error parsing netconf: %v", err)
+	}
+
+	client, err := rpc.DialHTTP("unix", NewDriverSocket(conf.IPAM.SocketDir, conf.IPAM.Type).GetSocketFile())
 	if err != nil {
 		return fmt.Errorf("error dialing Infoblox daemon: %v", err)
 	}

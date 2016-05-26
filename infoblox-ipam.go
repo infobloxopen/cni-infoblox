@@ -143,30 +143,6 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 	return network, err
 }
 
-/*
-func (ibDrv *InfobloxDriver) RequestNetwork(netviewName string, cidr string, prefixLength uint, gw string) (network string, gw string,  err error) {
-	var ibNetwork *ibclient.Network
-	if cidr != "" {
-		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr)
-	} else {
-		if netviewName == ibDrv.networkView {
-			ibNetwork, err = ibDrv.allocateNetwork(prefixLength)
-		} else {
-			log.Printf("Incorrect Network View name specified: '%s'", netviewName)
-			return "", "", nil
-		}
-	}
-
-	fmt.Printf("RequestNetwork: network is '%s'\n", ibNetwork)
-	res = ""
-	if ibNetwork != nil {
-		res = ibNetwork.Cidr
-	}
-
-	return res, gw, err
-}
-*/
-
 func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, gw string, err error) {
 	var ibNetwork *ibclient.Network
 	netviewName := netconf.IPAM.NetworkView
@@ -207,7 +183,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 		res = ibNetwork.Cidr
 	}
 
-	return res, gw, err
+	return res, netconf.IPAM.Gateway.String(), err
 }
 
 func makeContainers(containerList string) []Container {

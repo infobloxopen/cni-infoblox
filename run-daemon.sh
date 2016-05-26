@@ -3,7 +3,7 @@
 # rm /run/cni/infoblox.sock
 
 DRIVER_NAME="infoblox"
-PLUGIN_DIR="/run/cni"
+SOCKET_DIR="/run/cni"
 # GRID_HOST="192.168.124.200"
 GRID_HOST="infoblox.localdomain"
 WAPI_PORT="443"
@@ -19,4 +19,4 @@ PREFIX_LENGTH=25
 
 
 
-./cni-infoblox --daemon=true --grid-host=${GRID_HOST} --wapi-port=${WAPI_PORT} --wapi-username=${WAPI_USERNAME} --wapi-password=${WAPI_PASSWORD} --wapi-version=${WAPI_VERSION} --plugin-dir=${PLUGIN_DIR} --driver-name=${DRIVER_NAME} --ssl-verify=${SSL_VERIFY} --network-view=${NETWORK_VIEW} --network-container=${NETWORK_CONTAINER} --prefix-length=${PREFIX_LENGTH}
+./cni-infoblox --daemon=true --grid-host=${GRID_HOST} --wapi-port=${WAPI_PORT} --wapi-username=${WAPI_USERNAME} --wapi-password=${WAPI_PASSWORD} --wapi-version=${WAPI_VERSION} --socket-dir=${SOCKET_DIR} --driver-name=${DRIVER_NAME} --ssl-verify=${SSL_VERIFY} --network-view=${NETWORK_VIEW} --network-container=${NETWORK_CONTAINER} --prefix-length=${PREFIX_LENGTH}

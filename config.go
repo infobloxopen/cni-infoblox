@@ -23,7 +23,7 @@ type GridConfig struct {
 }
 
 type DriverConfig struct {
-	PluginDir        string
+	SocketDir        string
 	DriverName       string
 	NetworkView      string
 	NetworkContainer string
@@ -53,7 +53,7 @@ func LoadConfig() (config *Config) {
 	config.HttpPoolConnections = HTTP_POOL_CONNECTIONS
 	config.HttpPoolMaxSize = HTTP_POOL_MAX_SIZE
 
-	flag.StringVar(&config.PluginDir, "plugin-dir", "/run/cni", "Docker plugin directory where driver socket is created")
+	flag.StringVar(&config.SocketDir, "socket-dir", GetDefaultSocketDir(), "Directory where Infoblox IPAM daemon sockets are created")
 	flag.StringVar(&config.DriverName, "driver-name", "infoblox", "Name of Infoblox IPAM driver")
 
 	flag.Parse()
