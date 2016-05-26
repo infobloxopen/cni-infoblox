@@ -64,7 +64,6 @@ type InterfaceInfo struct {
 	wg    sync.WaitGroup
 }
 
-
 func getMacAddress(args *skel.CmdArgs) (mac string) {
 	var err error
 	ifaceInfo := &InterfaceInfo{}
@@ -90,7 +89,6 @@ func getMacAddress(args *skel.CmdArgs) (mac string) {
 
 	return mac
 }
-
 
 // Allocate acquires an IP from Infoblox for a specified container.
 func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err error) {
@@ -141,16 +139,10 @@ func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
 	mac := getMacAddress(args)
 	fmt.Printf("Infoblox.Release called, mac is '%s'\n", mac)
 
-	//	ref, _ := ib.Drv.ReleaseIP
-	return nil
-	/*
-		if l := d.getLease(args.ContainerID, conf.Name); l != nil {
-			l.Stop()
-			return nil
-		}
+	ref, err := ib.Drv.ReleaseAddress(conf.IPAM.NetworkView, "", mac)
+	fmt.Printf("IP Address released: '%s'\n", ref)
 
-		return fmt.Errorf("lease not found: %v/%v", args.ContainerID, conf.Name)
-	*/
+	return err
 }
 
 /*

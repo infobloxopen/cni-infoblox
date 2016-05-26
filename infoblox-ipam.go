@@ -33,17 +33,17 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, mac
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
 }
 
-/*
-func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ) (map[string]interface{}, error) {
-	network := ibclient.BuildNetworkFromRef(v.PoolID)
-	ref, _ := ibDrv.objMgr.ReleaseIP(network.NetviewName, v.Address)
+func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error) {
+	if netviewName == "" {
+		netviewName = ibDrv.networkView
+	}
+	ref, err = ibDrv.objMgr.ReleaseIP(netviewName, ipAddr, macAddr)
 	if ref == "" {
-		log.Printf("***** IP Cannot be deleted '%s'! *******\n", v.Address)
+		log.Printf("***** IP Cannot be deleted '%s', '%s', '%s'! *******\n", netviewName, ipAddr, macAddr)
 	}
 
-	return map[string]interface{}{}, nil
+	return
 }
-*/
 
 func (ibDrv *InfobloxDriver) createNetworkContainer(netview string, pool string) (*ibclient.NetworkContainer, error) {
 	container, err := ibDrv.objMgr.GetNetworkContainer(netview, pool)
