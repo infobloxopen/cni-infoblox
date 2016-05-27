@@ -23,11 +23,17 @@ type InfobloxDriver struct {
 	containers   []Container
 }
 
-func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, macAddr string, vmID string) (string, error) {
+func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
+	var fixedAddr *ibclient.FixedAddress
 	if len(macAddr) == 0 {
 		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.\n")
+	} else {
+		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, ipAddr, macAddr)
 	}
-	fixedAddr, _ := ibDrv.objMgr.AllocateIP(netviewName, cidr, macAddr, vmID)
+
+	if fixedAddr == nil {
+		fixedAddr, _ = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, vmID)
+	}
 
 	fmt.Printf("RequestAddress: fixedAddr is '%s'\n", *fixedAddr)
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
@@ -143,7 +149,7 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, gw string, err error) {
+func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, err error) {
 	var ibNetwork *ibclient.Network
 	netviewName := netconf.IPAM.NetworkView
 	cidr := net.IPNet{}
@@ -155,7 +161,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 	} else {
 		networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
 		if err != nil {
-			return "", "", err
+			return "", err
 		}
 		if networkByName != nil {
 			fmt.Printf("GetNetworkByName: network is '%s'\n", *networkByName)
@@ -172,7 +178,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 				ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name)
 			} else {
 				log.Printf("Incorrect Network View name specified: '%s'")
-				return "", "", nil
+				return "", nil
 			}
 		}
 	}
@@ -182,8 +188,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 	if ibNetwork != nil {
 		res = ibNetwork.Cidr
 	}
-
-	return res, netconf.IPAM.Gateway.String(), err
+	return res, err
 }
 
 func makeContainers(containerList string) []Container {

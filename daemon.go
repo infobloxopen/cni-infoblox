@@ -44,8 +44,11 @@ type IPAMConfig struct {
 }
 
 type NetConfig struct {
-	Name string      `json:"name"`
-	IPAM *IPAMConfig `json:"ipam"`
+	Name      string      `json:"name"`
+	Type      string      `json:"type"`
+	Bridge    string      `json:"bridge"`
+	IsGateway bool        `json:"isGateway"`
+	IPAM      *IPAMConfig `json:"ipam"`
 }
 
 type Infoblox struct {
@@ -65,27 +68,33 @@ type InterfaceInfo struct {
 	wg    sync.WaitGroup
 }
 
-func getMacAddress(args *skel.CmdArgs) (mac string) {
+func getMacAddress(netns string, ifaceName string) (mac string) {
 	var err error
 	ifaceInfo := &InterfaceInfo{}
-	errCh := make(chan error, 1)
-	ifaceInfo.wg.Add(1)
-	go func() {
-		errCh <- ns.WithNetNSPath(args.Netns, true, func(_ *os.File) error {
-			defer ifaceInfo.wg.Done()
-
-			ifaceInfo.iface, err = net.InterfaceByName(args.IfName)
-			if err != nil {
-				return fmt.Errorf("error looking up interface '%s': '%s'", args.IfName, err)
-			}
-			return nil
-		})
-	}()
-
-	if err = <-errCh; err != nil {
-		fmt.Printf("%s\n", err)
-	} else {
+	if netns == "" {
+		ifaceInfo.iface, err = net.InterfaceByName(ifaceName)
 		mac = ifaceInfo.iface.HardwareAddr.String()
+
+	} else {
+		errCh := make(chan error, 1)
+		ifaceInfo.wg.Add(1)
+		go func() {
+			errCh <- ns.WithNetNSPath(netns, true, func(_ *os.File) error {
+				defer ifaceInfo.wg.Done()
+
+				ifaceInfo.iface, err = net.InterfaceByName(ifaceName)
+				if err != nil {
+					return fmt.Errorf("error looking up interface '%s': '%s'", ifaceName, err)
+				}
+				return nil
+			})
+		}()
+
+		if err = <-errCh; err != nil {
+			fmt.Printf("%s\n", err)
+		} else {
+			mac = ifaceInfo.iface.HardwareAddr.String()
+		}
 	}
 
 	return mac
@@ -104,12 +113,33 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 		netviewName = ib.Drv.networkView
 	}
 	log.Printf("RequestNetwork: '%s', '%s'\n", netviewName, cidr.String())
-	subnet, gw, _ := ib.Drv.RequestNetwork(conf)
+	subnet, _ := ib.Drv.RequestNetwork(conf)
+	if subnet == "" {
+		return nil
+	}
 
-	mac := getMacAddress(args)
+	gw := ""
+	log.Printf("RequestNetwork: conf.Type is '%s', conf.IsGateway is '%s, conf.Bridge '%s'\n", conf.Type, conf.IsGateway, conf.Bridge)
+	if conf.Type == "bridge" && conf.IsGateway && conf.Bridge != "" {
+		gwMac := getMacAddress("/proc/self/ns/net", conf.Bridge)
+		log.Printf("RequestNetwork: gwMac is '%s'\n", gwMac)
+
+		if gwMac != "" {
+
+			gwIP := ""
+			if conf.IPAM.Gateway != nil {
+				gwIP = conf.IPAM.Gateway.String()
+			}
+
+			gw, _ = ib.Drv.RequestAddress(netviewName, subnet, gwIP, gwMac, "")
+			log.Printf("RequestNetwork: gwIP is '%s', gw is '%s'\n", gwIP, gw)
+		}
+	}
+
+	mac := getMacAddress(args.Netns, args.IfName)
 
 	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", netviewName, subnet, mac)
-	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, mac, args.ContainerID)
+	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, "", mac, args.ContainerID)
 
 	//fmt.Printf("In Allocate(), args: '%s'\n", args)
 	//fmt.Printf("In Allocate(), conf: '%s'\n", conf)
@@ -137,7 +167,7 @@ func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
-	mac := getMacAddress(args)
+	mac := getMacAddress(args.Netns, args.IfName)
 	fmt.Printf("Infoblox.Release called, mac is '%s'\n", mac)
 
 	ref, err := ib.Drv.ReleaseAddress(conf.IPAM.NetworkView, "", mac)
