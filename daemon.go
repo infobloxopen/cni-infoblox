@@ -63,6 +63,20 @@ func newInfoblox(drv *InfobloxDriver) *Infoblox {
 	}
 }
 
+func listInterfaces(netns string) {
+	fmt.Printf("Listing interfaces in namespace '%s'\n", netns)
+
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		fmt.Printf("Error getting interfaces: '%s'\n", err)
+		return
+	}
+
+	for i, iface := range ifaces {
+		fmt.Printf("interface %d: '%s'\n", i, iface.Name)
+	}
+}
+
 type InterfaceInfo struct {
 	iface *net.Interface
 	wg    sync.WaitGroup
@@ -72,6 +86,8 @@ func getMacAddress(netns string, ifaceName string) (mac string) {
 	var err error
 	ifaceInfo := &InterfaceInfo{}
 	if netns == "" {
+		listInterfaces(netns)
+		fmt.Printf("in getMacAddress(1), ifaceName is '%s'\n", ifaceName)
 		ifaceInfo.iface, err = net.InterfaceByName(ifaceName)
 		mac = ifaceInfo.iface.HardwareAddr.String()
 
@@ -82,6 +98,8 @@ func getMacAddress(netns string, ifaceName string) (mac string) {
 			errCh <- ns.WithNetNSPath(netns, func(_ ns.NetNS) error {
 				defer ifaceInfo.wg.Done()
 
+				listInterfaces(netns)
+				fmt.Printf("in getMacAddress(2), ifaceName is '%s'\n", ifaceName)
 				ifaceInfo.iface, err = net.InterfaceByName(ifaceName)
 				if err != nil {
 					return fmt.Errorf("error looking up interface '%s': '%s'", ifaceName, err)
@@ -121,7 +139,7 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 	gw := ""
 	log.Printf("RequestNetwork: conf.Type is '%s', conf.IsGateway is '%s, conf.Bridge '%s'\n", conf.Type, conf.IsGateway, conf.Bridge)
 	if conf.Type == "bridge" && conf.IsGateway && conf.Bridge != "" {
-		gwMac := getMacAddress("/proc/self/ns/net", conf.Bridge)
+		gwMac := getMacAddress("", conf.Bridge)
 		log.Printf("RequestNetwork: gwMac is '%s'\n", gwMac)
 
 		if gwMac != "" {
