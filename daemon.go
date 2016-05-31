@@ -22,7 +22,7 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
-	"os"
+	//	"os"
 	"runtime"
 	"sync"
 
@@ -79,7 +79,7 @@ func getMacAddress(netns string, ifaceName string) (mac string) {
 		errCh := make(chan error, 1)
 		ifaceInfo.wg.Add(1)
 		go func() {
-			errCh <- ns.WithNetNSPath(netns, true, func(_ *os.File) error {
+			errCh <- ns.WithNetNSPath(netns, func(_ ns.NetNS) error {
 				defer ifaceInfo.wg.Done()
 
 				ifaceInfo.iface, err = net.InterfaceByName(ifaceName)
