@@ -23,6 +23,18 @@ type InfobloxDriver struct {
 	containers   []Container
 }
 
+func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, error) {
+	var netview *ibclient.NetworkView
+	netview, _ = ibDrv.objMgr.GetNetworkView(netviewName)
+
+	if netview == nil {
+		netview, _ = ibDrv.objMgr.CreateNetworkView(netviewName)
+	}
+
+	fmt.Printf("RequestNetworkView: netview is '%s'\n", *netview)
+	return netview.Name, nil
+}
+
 func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
 	var fixedAddr *ibclient.FixedAddress
 	if len(macAddr) == 0 {

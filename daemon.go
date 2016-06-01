@@ -131,6 +131,11 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 		netviewName = ib.Drv.networkView
 	}
 	log.Printf("RequestNetwork: '%s', '%s'\n", netviewName, cidr.String())
+	netview, _ := ib.Drv.RequestNetworkView(netviewName)
+	if netview == "" {
+		return nil
+	}
+
 	subnet, _ := ib.Drv.RequestNetwork(conf)
 	if subnet == "" {
 		return nil
