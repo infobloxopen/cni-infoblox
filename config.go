@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/containernetworking/cni/pkg/types"
+	"net"
 )
 
 const (
@@ -31,7 +33,6 @@ type DriverConfig struct {
 }
 
 type Config struct {
-	Daemon bool
 	GridConfig
 	DriverConfig
 }
@@ -39,7 +40,6 @@ type Config struct {
 func LoadConfig() (config *Config) {
 	config = new(Config)
 
-	flag.BoolVar(&config.Daemon, "daemon", false, "Daemon Mode")
 	flag.StringVar(&config.GridHost, "grid-host", "192.168.124.200", "IP of Infoblox Grid Host")
 	flag.StringVar(&config.WapiVer, "wapi-version", "2.0", "Infoblox WAPI Version.")
 	flag.StringVar(&config.WapiPort, "wapi-port", "443", "Infoblox WAPI Port.")
@@ -59,4 +59,23 @@ func LoadConfig() (config *Config) {
 	flag.Parse()
 
 	return config
+}
+
+type IPAMConfig struct {
+	Type             string        `json:"type"`
+	SocketDir        string        `json:"socket-dir"`
+	NetworkView      string        `json:"network-view"`
+	NetworkContainer string        `json:"network-container"`
+	PrefixLength     uint          `json:"prefix-length"`
+	Subnet           types.IPNet   `json:"subnet"`
+	Gateway          net.IP        `json:"gateway"`
+	Routes           []types.Route `json:"routes"`
+}
+
+type NetConfig struct {
+	Name      string      `json:"name"`
+	Type      string      `json:"type"`
+	Bridge    string      `json:"bridge"`
+	IsGateway bool        `json:"isGateway"`
+	IPAM      *IPAMConfig `json:"ipam"`
 }

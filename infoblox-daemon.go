@@ -27,29 +27,9 @@ import (
 	"sync"
 
 	"github.com/containernetworking/cni/pkg/ns"
-	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	ibclient "github.com/infobloxopen/infoblox-go-client"
 )
-
-type IPAMConfig struct {
-	Type             string        `json:"type"`
-	SocketDir        string        `json:"socket-dir"`
-	NetworkView      string        `json:"network-view"`
-	NetworkContainer string        `json:"network-container"`
-	PrefixLength     uint          `json:"prefix-length"`
-	Subnet           types.IPNet   `json:"subnet"`
-	Gateway          net.IP        `json:"gateway"`
-	Routes           []types.Route `json:"routes"`
-}
-
-type NetConfig struct {
-	Name      string      `json:"name"`
-	Type      string      `json:"type"`
-	Bridge    string      `json:"bridge"`
-	IsGateway bool        `json:"isGateway"`
-	IPAM      *IPAMConfig `json:"ipam"`
-}
 
 type Infoblox struct {
 	//	mux    sync.Mutex
@@ -119,7 +99,7 @@ func getMacAddress(netns string, ifaceName string) (mac string) {
 }
 
 // Allocate acquires an IP from Infoblox for a specified container.
-func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err error) {
+func (ib *Infoblox) Allocate(args *CmdArgs, result *types.Result) (err error) {
 	conf := NetConfig{}
 	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
@@ -183,7 +163,7 @@ func (ib *Infoblox) Allocate(args *skel.CmdArgs, result *types.Result) (err erro
 
 // Release stops maintenance of the lease acquired in Allocate()
 // and sends a release msg to the DHCP server.
-func (ib *Infoblox) Release(args *skel.CmdArgs, reply *struct{}) error {
+func (ib *Infoblox) Release(args *CmdArgs, reply *struct{}) error {
 	conf := NetConfig{}
 	fmt.Printf("Infoblox.Release called, args '%v'\n", *args)
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
@@ -241,4 +221,9 @@ func runDaemon(config *Config) {
 	rpc.Register(ib)
 	rpc.HandleHTTP()
 	http.Serve(l, nil)
+}
+
+func main() {
+	config := LoadConfig()
+	runDaemon(config)
 }

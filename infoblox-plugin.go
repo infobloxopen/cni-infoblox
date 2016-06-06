@@ -20,20 +20,14 @@ import (
 	"net/rpc"
 	"path/filepath"
 
-	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 )
 
 func main() {
-	config := LoadConfig()
-	if config.Daemon {
-		runDaemon(config)
-	} else {
-		skel.PluginMain(cmdAdd, cmdDel)
-	}
+	PluginMain(cmdAdd, cmdDel)
 }
 
-func cmdAdd(args *skel.CmdArgs) error {
+func cmdAdd(args *CmdArgs) error {
 	result := types.Result{}
 
 	if err := rpcCall("Infoblox.Allocate", args, &result); err != nil {
@@ -42,7 +36,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	return result.Print()
 }
 
-func cmdDel(args *skel.CmdArgs) error {
+func cmdDel(args *CmdArgs) error {
 	result := struct{}{}
 	if err := rpcCall("Infoblox.Release", args, &result); err != nil {
 		return fmt.Errorf("error dialing Infoblox daemon: %v", err)
@@ -50,7 +44,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	return nil
 }
 
-func rpcCall(method string, args *skel.CmdArgs, result interface{}) error {
+func rpcCall(method string, args *CmdArgs, result interface{}) error {
 	conf := NetConfig{}
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
