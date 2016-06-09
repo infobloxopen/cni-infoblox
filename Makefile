@@ -1,6 +1,6 @@
-COMMON_SOURCES=config.go driver-socket.go infoblox-skel.go
-PLUGIN_SOURCES=infoblox-plugin.go $(COMMON_SOURCES)
-DAEMON_SOURCES=infoblox-daemon.go infoblox-ipam.go $(COMMON_SOURCES)
+COMMON_SOURCES=config.go driver-socket.go cmdargs.go
+PLUGIN_SOURCES=plugin.go $(COMMON_SOURCES)
+DAEMON_SOURCES=daemon.go infoblox-ipam.go $(COMMON_SOURCES)
 PLUGIN_BINARY=infoblox-plugin
 DAEMON_BINARY=infoblox-daemon
 DAEMON_IMAGE=infoblox-daemon
