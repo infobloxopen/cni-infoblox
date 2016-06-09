@@ -16,7 +16,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 )
@@ -83,7 +82,7 @@ func (s *DriverSocket) SetupSocket() string {
 		log.Printf("Created Socket Directory: '%s'", s.SocketDir)
 	}
 
-	fmt.Printf("socketFile: '%s'\n", s.SocketFile)
+	log.Printf("SocketFile: '%s'", s.SocketFile)
 	exists, err = fileExists(s.SocketFile)
 	if err != nil {
 		log.Panicf("Stat Socket File error: '%s'", err)

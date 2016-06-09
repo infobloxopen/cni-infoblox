@@ -46,14 +46,14 @@ func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, err
 		netview, _ = ibDrv.objMgr.CreateNetworkView(netviewName)
 	}
 
-	fmt.Printf("RequestNetworkView: netview is '%s'\n", *netview)
+	log.Printf("RequestNetworkView: netview result is '%s'", *netview)
 	return netview.Name, nil
 }
 
 func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
 	var fixedAddr *ibclient.FixedAddress
 	if len(macAddr) == 0 {
-		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.\n")
+		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.")
 	} else {
 		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, ipAddr, macAddr)
 	}
@@ -62,7 +62,7 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 		fixedAddr, _ = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, vmID)
 	}
 
-	fmt.Printf("RequestAddress: fixedAddr is '%s'\n", *fixedAddr)
+	log.Printf("RequestAddress: fixedAddr result is '%s'", *fixedAddr)
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
 }
 
@@ -72,7 +72,7 @@ func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, m
 	}
 	ref, err = ibDrv.objMgr.ReleaseIP(netviewName, ipAddr, macAddr)
 	if ref == "" {
-		log.Printf("***** IP Cannot be deleted '%s', '%s', '%s'! *******\n", netviewName, ipAddr, macAddr)
+		log.Printf("ReleaseAddress: ***** IP Cannot be deleted '%s', '%s', '%s'! *******", netviewName, ipAddr, macAddr)
 	}
 
 	return
@@ -104,7 +104,7 @@ func (ibDrv *InfobloxDriver) resetContainers() {
 }
 
 func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uint, name string) (network *ibclient.Network, err error) {
-	fmt.Printf("allocateNetworkHelper(): netview is '%s',  prefixLen is '%d', name is '%s'\n", netview, prefixLen, name)
+	log.Printf("allocateNetworkHelper: netview='%s', prefixLen='%d', name='%s'", netview, prefixLen, name)
 	container := ibDrv.nextAvailableContainer()
 	for container != nil {
 		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer)
@@ -127,7 +127,7 @@ func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uin
 }
 
 func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string) (network *ibclient.Network, err error) {
-	fmt.Printf("allocateNetwork(): prefixLen is '%d', name is '%s'\n", prefixLen, name)
+	log.Printf("allocateNetwork: prefixLen='%d', name='%s'", prefixLen, name)
 	if prefixLen == 0 {
 		prefixLen = ibDrv.prefixLength
 	}
@@ -149,9 +149,8 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 		return nil, err
 	}
 	if network != nil {
-		fmt.Printf("GetNetwork: network is '%s'\n", *network)
 		if n, ok := network.Ea["Network Name"]; !ok || n != name {
-			fmt.Printf("GetNetwork: network is already used '%s'\n", *network)
+			log.Printf("requestSpecificNetwork: network is already used '%s'", *network)
 			return nil, nil
 		}
 	} else {
@@ -160,9 +159,8 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 			return nil, err
 		}
 		if networkByName != nil {
-			fmt.Printf("GetNetworkByName: network is '%s'\n", *networkByName)
 			if networkByName.Cidr != subnet {
-				fmt.Printf("GetNetworkByName: network name has different Cidr '%s'\n", networkByName.Cidr)
+				log.Printf("requestSpecificNetwork: network name has different Cidr '%s'", networkByName.Cidr)
 				return nil, nil
 			}
 		}
@@ -170,7 +168,7 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 
 	if network == nil {
 		network, err = ibDrv.objMgr.CreateNetwork(netview, subnet, name)
-		fmt.Printf("CreateNetwork: network is '%s', err is '%s'\n", *network, err)
+		log.Printf("requestSpecificNetwork: CreateNetwork returns '%s', err='%s'", *network, err)
 	}
 
 	return network, err
@@ -180,9 +178,8 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 	var ibNetwork *ibclient.Network
 	netviewName := netconf.IPAM.NetworkView
 	cidr := net.IPNet{}
-	fmt.Printf("RequestNetwork(): cidr is '%s', IPAM.Subnet is '%s'\n", cidr, netconf.IPAM.Subnet)
+	log.Printf("RequestNetwork: IPAM.Subnet='%s'", netconf.IPAM.Subnet)
 	if netconf.IPAM.Subnet.IP != nil {
-		fmt.Printf("Subnet.IP is NOT nil!!!!!!!\n")
 		cidr = net.IPNet{IP: netconf.IPAM.Subnet.IP, Mask: netconf.IPAM.Subnet.Mask}
 		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr.String(), netconf.Name)
 	} else {
@@ -191,7 +188,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 			return "", err
 		}
 		if networkByName != nil {
-			fmt.Printf("GetNetworkByName: network is '%s'\n", *networkByName)
+			log.Printf("RequestNetwork: GetNetwork by name returns '%s'", *networkByName)
 			ibNetwork = networkByName
 		} else {
 			if netviewName == "" {
@@ -204,13 +201,13 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 				}
 				ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name)
 			} else {
-				log.Printf("Incorrect Network View name specified: '%s'")
+				log.Printf("RequestNetwork: Incorrect Network View name specified='%s'", netviewName)
 				return "", nil
 			}
 		}
 	}
 
-	fmt.Printf("RequestNetwork: network is '%s'\n", ibNetwork)
+	log.Printf("RequestNetwork: result='%s'", ibNetwork)
 	res := ""
 	if ibNetwork != nil {
 		res = ibNetwork.Cidr

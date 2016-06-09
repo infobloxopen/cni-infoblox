@@ -50,7 +50,7 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *types.Result) (err error)
 	if netviewName == "" {
 		netviewName = ib.Drv.networkView
 	}
-	log.Printf("RequestNetwork: '%s', '%s'\n", netviewName, cidr.String())
+	log.Printf("RequestNetwork: '%s', '%s'", netviewName, cidr.String())
 	netview, _ := ib.Drv.RequestNetworkView(netviewName)
 	if netview == "" {
 		return nil
@@ -63,34 +63,30 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *types.Result) (err error)
 
 	mac := args.IfMac
 
-	fmt.Printf("RequestAddress: '%s', '%s', '%s'\n", netviewName, subnet, mac)
+	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, subnet, mac)
 	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, "", mac, args.ContainerID)
 
 	ipn, _ := types.ParseCIDR(subnet)
 	ipn.IP = net.ParseIP(ip)
-	fmt.Printf("ip: '%s'\n", ip)
-	fmt.Printf("ipn: '%s'\n", *ipn)
 	result.IP4 = &types.IPConfig{
 		IP:      *ipn,
 		Gateway: conf.IPAM.Gateway,
 		Routes:  conf.IPAM.Routes,
 	}
 
+	log.Printf("Allocate result: '%s'", result)
 	return nil
 }
 
 func (ib *Infoblox) Release(args *ExtCmdArgs, reply *struct{}) error {
 	conf := NetConfig{}
-	fmt.Printf("Infoblox.Release called, args '%v'\n", *args)
+	log.Printf("Release: called with args '%v'", *args)
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
-	mac := args.IfMac
-	fmt.Printf("Infoblox.Release called, mac is '%s'\n", mac)
-
-	ref, err := ib.Drv.ReleaseAddress(conf.IPAM.NetworkView, "", mac)
-	fmt.Printf("IP Address released: '%s'\n", ref)
+	ref, err := ib.Drv.ReleaseAddress(conf.IPAM.NetworkView, "", args.IfMac)
+	log.Printf("IP Address released: '%s'", ref)
 
 	return err
 }
@@ -106,7 +102,7 @@ func runDaemon(config *Config) {
 	// ensure the RPC server does not get scheduled onto those
 	runtime.LockOSThread()
 
-	fmt.Printf("Config is '%s'\n", config)
+	log.Printf("Config is '%s'\n", config)
 
 	conn, err := ibclient.NewConnector(
 		config.GridHost,
@@ -119,8 +115,6 @@ func runDaemon(config *Config) {
 		config.HttpPoolConnections,
 		config.HttpPoolMaxSize)
 
-	log.Printf("Socket Dir: '%s'\n", config.SocketDir)
-	log.Printf("Driver Name: '%s'\n", config.DriverName)
 	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
 	l, err := getListener(driverSocket)
 
