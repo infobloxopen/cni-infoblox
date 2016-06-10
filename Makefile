@@ -3,31 +3,19 @@ PLUGIN_SOURCES=plugin.go $(COMMON_SOURCES)
 DAEMON_SOURCES=daemon.go infoblox-ipam.go $(COMMON_SOURCES)
 PLUGIN_BINARY=infoblox-plugin
 DAEMON_BINARY=infoblox-daemon
-DAEMON_IMAGE=infoblox-daemon
+ALL_BINARIES=$(PLUGIN_BINARY) $(DAEMON_BINARY)
 
-LOCAL_IMAGE=$(DAEMON_IMAGE)
+DAEMON_ACI_IMAGE=infoblox-cni-daemon.aci
+DAEMON_DOCKER_IMAGE=infoblox-cni-daemon
+DEV_IMAGE=$(DOCKERHUB_ID)/$(DAEMON_DOCKER_IMAGE)  # Requires DOCKERHUB_ID environment variable
+RELEASE_IMAGE=infoblox/$(DAEMON_DOCKER_IMAGE)
 
-# Build binary - this is the default target
-build: $(PLUGIN_BINARY) $(DAEMON_BINARY)
 
-
-# Build binary and docker image
+# Build binary
 all: build
 
-
-# Build local docker image
-image: build
-	docker build -t $(LOCAL_IMAGE) .
-
-# Push image to user's docker hub. NOTE: requires DOCKERHUB_ID environment variable
-push: image
-	docker tag $(LOCAL_IMAGE) $(DEV_IMAGE)
-	docker push $(DEV_IMAGE)
-
-# Push image to infoblox docker hub
-push-release: image
-	docker tag $(LOCAL_IMAGE) $(RELEASE_IMAGE)
-	docker push $(RELEASE_IMAGE)
+# Build binary - this is the default target
+build: $(ALL_BINARIES)
 
 $(PLUGIN_BINARY): $(PLUGIN_SOURCES)
 	go build -o $(PLUGIN_BINARY) $(PLUGIN_SOURCES)
@@ -37,11 +25,35 @@ $(DAEMON_BINARY): $(DAEMON_SOURCES)
 
 # Delete binary for clean build
 clean:
-	rm -f $(PLUGIN_BINARY) $(DAEMON_BINARY)
+	rm -f $(ALL_BINARIES)
 
-# Delete local docker images
-clean-images:
-	docker rmi -f $(LOCAL_IMAGE) $(DEV_IMAGE) $(RELEASE_IMAGE)
+
+# Container Images...
+
+images: aci-image docker-image
+
+docker-image: $(DAEMON_BINARY)
+	docker build -t $(DAEMON_DOCKER_IMAGE) .
+
+# Push image to user's docker hub. NOTE: requires DOCKERHUB_ID environment variable
+push: docker-image
+	docker tag $(DAEMON_DOCKER_IMAGE) $(DEV_IMAGE)
+	docker push $(DEV_IMAGE)
+
+# Push image to infoblox docker hub
+push-release: docker-image
+	docker tag $(DAEMON_DOCKER_IMAGE) $(RELEASE_IMAGE)
+	docker push $(RELEASE_IMAGE)
+
+aci-image: $(DAEMON_ACI_IMAGE)
+
+$(DAEMON_ACI_IMAGE): $(DAEMON_BINARY)
+	./build-aci.sh
 
 # Clean everything
 clean-all: clean clean-images
+
+# Delete local docker images
+clean-images:
+	docker rmi -f $(DAEMON_DOCKER_IMAGE)
+	/bin/rm -f $(DAEMON_ACI_IMAGE)

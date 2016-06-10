@@ -216,7 +216,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 }
 
 func makeContainers(containerList string) []Container {
-	containers := make([]Container, 0)
+	var containers []Container
 
 	parts := strings.Split(containerList, ",")
 	for _, p := range parts {

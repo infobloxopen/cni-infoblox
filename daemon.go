@@ -102,7 +102,7 @@ func runDaemon(config *Config) {
 	// ensure the RPC server does not get scheduled onto those
 	runtime.LockOSThread()
 
-	log.Printf("Config is '%s'\n", config)
+	log.Printf("Config is '%v'\n", *config)
 
 	conn, err := ibclient.NewConnector(
 		config.GridHost,
