@@ -112,8 +112,7 @@ func runDaemon(config *Config) {
 		config.WapiPassword,
 		config.SslVerify,
 		config.HttpRequestTimeout,
-		config.HttpPoolConnections,
-		config.HttpPoolMaxSize)
+		config.HttpPoolConnections)
 
 	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
 	l, err := getListener(driverSocket)

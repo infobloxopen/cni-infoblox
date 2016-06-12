@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	HTTP_REQUEST_TIMEOUT  = 120
-	HTTP_POOL_CONNECTIONS = 100
-	HTTP_POOL_MAX_SIZE    = 100
+	HTTP_REQUEST_TIMEOUT  = 60
+	HTTP_POOL_CONNECTIONS = 10
 )
 
 type GridConfig struct {
@@ -67,7 +66,6 @@ func LoadConfig() (config *Config) {
 	flag.UintVar(&config.PrefixLength, "prefix-length", 24, "The default CIDR prefix length when allocating a subnet from Network Container")
 	config.HttpRequestTimeout = HTTP_REQUEST_TIMEOUT
 	config.HttpPoolConnections = HTTP_POOL_CONNECTIONS
-	config.HttpPoolMaxSize = HTTP_POOL_MAX_SIZE
 
 	flag.StringVar(&config.SocketDir, "socket-dir", GetDefaultSocketDir(), "Directory where Infoblox IPAM daemon sockets are created")
 	flag.StringVar(&config.DriverName, "driver-name", "infoblox", "Name of Infoblox IPAM driver")
