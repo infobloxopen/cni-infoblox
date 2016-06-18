@@ -1,0 +1,236 @@
+// Copyright 2016 Infoblox Inc.
+// All Rights Reserved.
+//
+//    Licensed under the Apache License, Version 2.0 (the "License"); you may
+//    not use this file except in compliance with the License. You may obtain
+//    a copy of the License at
+//
+//         http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+//    License for the specific language governing permissions and limitations
+//    under the License.
+
+package main
+
+import (
+	"errors"
+	"fmt"
+	"log"
+	"net"
+	"strings"
+
+	ibclient "github.com/infobloxopen/infoblox-go-client"
+)
+
+type Container struct {
+	NetworkContainer string // CIDR of Network Container
+	ContainerObj     *ibclient.NetworkContainer
+	exhausted        bool
+}
+
+type InfobloxDriver struct {
+	objMgr       *ibclient.ObjectManager
+	networkView  string
+	prefixLength uint
+	containers   []Container
+}
+
+func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, error) {
+	var netview *ibclient.NetworkView
+	netview, _ = ibDrv.objMgr.GetNetworkView(netviewName)
+
+	if netview == nil {
+		netview, _ = ibDrv.objMgr.CreateNetworkView(netviewName)
+	}
+
+	log.Printf("RequestNetworkView: netview result is '%s'", *netview)
+	return netview.Name, nil
+}
+
+func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
+	var fixedAddr *ibclient.FixedAddress
+	if len(macAddr) == 0 {
+		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.")
+	} else {
+		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, ipAddr, macAddr)
+	}
+
+	if fixedAddr == nil {
+		fixedAddr, _ = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, vmID)
+	}
+
+	log.Printf("RequestAddress: fixedAddr result is '%s'", *fixedAddr)
+	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
+}
+
+func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error) {
+	if netviewName == "" {
+		netviewName = ibDrv.networkView
+	}
+	ref, err = ibDrv.objMgr.ReleaseIP(netviewName, ipAddr, macAddr)
+	if ref == "" {
+		log.Printf("ReleaseAddress: ***** IP Cannot be deleted '%s', '%s', '%s'! *******", netviewName, ipAddr, macAddr)
+	}
+
+	return
+}
+
+func (ibDrv *InfobloxDriver) createNetworkContainer(netview string, pool string) (*ibclient.NetworkContainer, error) {
+	container, err := ibDrv.objMgr.GetNetworkContainer(netview, pool)
+	if container == nil {
+		container, err = ibDrv.objMgr.CreateNetworkContainer(netview, pool)
+	}
+
+	return container, err
+}
+
+func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
+	for i, _ := range ibDrv.containers {
+		if !ibDrv.containers[i].exhausted {
+			return &ibDrv.containers[i]
+		}
+	}
+
+	return nil
+}
+
+func (ibDrv *InfobloxDriver) resetContainers() {
+	for i, _ := range ibDrv.containers {
+		ibDrv.containers[i].exhausted = false
+	}
+}
+
+func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uint, name string) (network *ibclient.Network, err error) {
+	log.Printf("allocateNetworkHelper: netview='%s', prefixLen='%d', name='%s'", netview, prefixLen, name)
+	container := ibDrv.nextAvailableContainer()
+	for container != nil {
+		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer)
+		if container.ContainerObj == nil {
+			var err error
+			container.ContainerObj, err = ibDrv.createNetworkContainer(netview, container.NetworkContainer)
+			if err != nil {
+				return nil, err
+			}
+		}
+		network, err = ibDrv.objMgr.AllocateNetwork(netview, container.NetworkContainer, prefixLen, name)
+		if network != nil {
+			break
+		}
+		container.exhausted = true
+		container = ibDrv.nextAvailableContainer()
+	}
+
+	return network, nil
+}
+
+func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string) (network *ibclient.Network, err error) {
+	log.Printf("allocateNetwork: prefixLen='%d', name='%s'", prefixLen, name)
+	if prefixLen == 0 {
+		prefixLen = ibDrv.prefixLength
+	}
+	network, err = ibDrv.allocateNetworkHelper(ibDrv.networkView, prefixLen, name)
+	if network == nil {
+		ibDrv.resetContainers()
+		network, err = ibDrv.allocateNetworkHelper(ibDrv.networkView, prefixLen, name)
+	}
+
+	if network == nil {
+		err = errors.New("Cannot allocate network in Address Space")
+	}
+	return
+}
+
+func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet string, name string) (*ibclient.Network, error) {
+	network, err := ibDrv.objMgr.GetNetwork(netview, subnet, nil)
+	if err != nil {
+		return nil, err
+	}
+	if network != nil {
+		if n, ok := network.Ea["Network Name"]; !ok || n != name {
+			log.Printf("requestSpecificNetwork: network is already used '%s'", *network)
+			return nil, nil
+		}
+	} else {
+		networkByName, err := ibDrv.objMgr.GetNetwork(netview, "", ibclient.EA{"Network Name": name})
+		if err != nil {
+			return nil, err
+		}
+		if networkByName != nil {
+			if networkByName.Cidr != subnet {
+				log.Printf("requestSpecificNetwork: network name has different Cidr '%s'", networkByName.Cidr)
+				return nil, nil
+			}
+		}
+	}
+
+	if network == nil {
+		network, err = ibDrv.objMgr.CreateNetwork(netview, subnet, name)
+		log.Printf("requestSpecificNetwork: CreateNetwork returns '%s', err='%s'", *network, err)
+	}
+
+	return network, err
+}
+
+func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, err error) {
+	var ibNetwork *ibclient.Network
+	netviewName := netconf.IPAM.NetworkView
+	cidr := net.IPNet{}
+	log.Printf("RequestNetwork: IPAM.Subnet='%s'", netconf.IPAM.Subnet)
+	if netconf.IPAM.Subnet.IP != nil {
+		cidr = net.IPNet{IP: netconf.IPAM.Subnet.IP, Mask: netconf.IPAM.Subnet.Mask}
+		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr.String(), netconf.Name)
+	} else {
+		networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
+		if err != nil {
+			return "", err
+		}
+		if networkByName != nil {
+			log.Printf("RequestNetwork: GetNetwork by name returns '%s'", *networkByName)
+			ibNetwork = networkByName
+		} else {
+			if netviewName == "" {
+				netviewName = ibDrv.networkView
+			}
+			if netviewName == ibDrv.networkView {
+				prefixLen := ibDrv.prefixLength
+				if netconf.IPAM.PrefixLength != 0 {
+					prefixLen = netconf.IPAM.PrefixLength
+				}
+				ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name)
+			} else {
+				log.Printf("RequestNetwork: Incorrect Network View name specified='%s'", netviewName)
+				return "", nil
+			}
+		}
+	}
+
+	log.Printf("RequestNetwork: result='%s'", ibNetwork)
+	res := ""
+	if ibNetwork != nil {
+		res = ibNetwork.Cidr
+	}
+	return res, err
+}
+
+func makeContainers(containerList string) []Container {
+	var containers []Container
+
+	parts := strings.Split(containerList, ",")
+	for _, p := range parts {
+		containers = append(containers, Container{p, nil, false})
+	}
+
+	return containers
+}
+
+func NewInfobloxDriver(objMgr *ibclient.ObjectManager, networkView string, networkContainer string, prefixLength uint) *InfobloxDriver {
+	return &InfobloxDriver{
+		objMgr:       objMgr,
+		networkView:  networkView,
+		prefixLength: prefixLength,
+		containers:   makeContainers(networkContainer),
+	}
+}
