@@ -55,7 +55,7 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 	if len(macAddr) == 0 {
 		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.")
 	} else {
-		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, ipAddr, macAddr)
+		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
 	}
 
 	if fixedAddr == nil {
@@ -70,7 +70,7 @@ func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, m
 	if netviewName == "" {
 		netviewName = ibDrv.networkView
 	}
-	ref, err = ibDrv.objMgr.ReleaseIP(netviewName, ipAddr, macAddr)
+	ref, err = ibDrv.objMgr.ReleaseIP(netviewName, "", ipAddr, macAddr)
 	if ref == "" {
 		log.Printf("ReleaseAddress: ***** IP Cannot be deleted '%s', '%s', '%s'! *******", netviewName, ipAddr, macAddr)
 	}
