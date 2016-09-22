@@ -80,13 +80,13 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *types.Result) (err error)
 
 func (ib *Infoblox) Release(args *ExtCmdArgs, reply *struct{}) error {
 	conf := NetConfig{}
-	log.Printf("Release: called with args '%v'", *args)
+	log.Printf("Release: called with args '%s'", *args)
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
 	ref, err := ib.Drv.ReleaseAddress(conf.IPAM.NetworkView, "", args.IfMac)
-	log.Printf("IP Address released: '%s'", ref)
+	log.Printf("Fixed Address released: '%s'", ref)
 
 	return err
 }
@@ -104,15 +104,22 @@ func runDaemon(config *Config) {
 
 	log.Printf("Config is '%v'\n", *config)
 
-	conn, err := ibclient.NewConnector(
-		config.GridHost,
-		config.WapiVer,
-		config.WapiPort,
-		config.WapiUsername,
-		config.WapiPassword,
+	hostConfig := ibclient.HostConfig{
+		Host:     config.GridHost,
+		Version:  config.WapiVer,
+		Port:     config.WapiPort,
+		Username: config.WapiUsername,
+		Password: config.WapiPassword,
+	}
+	transportConfig := ibclient.NewTransportConfig(
 		config.SslVerify,
 		config.HttpRequestTimeout,
-		config.HttpPoolConnections)
+		config.HttpPoolConnections,
+	)
+	wapiRequestBuilder := &ibclient.WapiRequestBuilder{HostConfig: hostConfig}
+	wapiRequestor := &ibclient.WapiHttpRequestor{}
+	conn, err := ibclient.NewConnector(hostConfig, transportConfig,
+		wapiRequestBuilder, wapiRequestor)
 
 	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
 	l, err := getListener(driverSocket)
