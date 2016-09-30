@@ -29,10 +29,10 @@ import (
 )
 
 type Infoblox struct {
-	Drv *InfobloxDriver
+	Drv IBInfobloxDriver
 }
 
-func newInfoblox(drv *InfobloxDriver) *Infoblox {
+func newInfoblox(drv IBInfobloxDriver) *Infoblox {
 	return &Infoblox{
 		Drv: drv,
 	}
@@ -47,9 +47,6 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *types.Result) (err error)
 
 	cidr := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
 	netviewName := conf.IPAM.NetworkView
-	if netviewName == "" {
-		netviewName = ib.Drv.networkView
-	}
 	log.Printf("RequestNetwork: '%s', '%s'", netviewName, cidr.String())
 	netview, _ := ib.Drv.RequestNetworkView(netviewName)
 	if netview == "" {
@@ -97,13 +94,7 @@ func getListener(driverSocket *DriverSocket) (net.Listener, error) {
 	return net.Listen("unix", socketFile)
 }
 
-func runDaemon(config *Config) {
-	// since other goroutines (on separate threads) will change namespaces,
-	// ensure the RPC server does not get scheduled onto those
-	runtime.LockOSThread()
-
-	log.Printf("Config is '%v'\n", *config)
-
+func getInfobloxDriver(config *Config) *InfobloxDriver {
 	hostConfig := ibclient.HostConfig{
 		Host:     config.GridHost,
 		Version:  config.WapiVer,
@@ -116,30 +107,36 @@ func runDaemon(config *Config) {
 		config.HttpRequestTimeout,
 		config.HttpPoolConnections,
 	)
-	wapiRequestBuilder := &ibclient.WapiRequestBuilder{HostConfig: hostConfig}
-	wapiRequestor := &ibclient.WapiHttpRequestor{}
-	conn, err := ibclient.NewConnector(hostConfig, transportConfig,
-		wapiRequestBuilder, wapiRequestor)
 
-	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
-	l, err := getListener(driverSocket)
+	requestBuilder := &ibclient.WapiRequestBuilder{}
+	requestor := &ibclient.WapiHttpRequestor{}
+	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
+		requestBuilder, requestor)
 
 	objMgr := ibclient.NewObjectManager(conn, "Rkt", "RktEngineID")
 
-	ibDrv := NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
+	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
+}
+
+func runDaemon(config *Config) {
+	// since other goroutines (on separate threads) will change namespaces,
+	// ensure the RPC server does not get scheduled onto those
+	runtime.LockOSThread()
+
+	log.Printf("Config is '%v'\n", *config)
+
+	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
+	l, err := getListener(driverSocket)
 
 	if err != nil {
 		log.Printf("Error getting listener: %v", err)
 		return
 	}
 
+	ibDrv := getInfobloxDriver(config)
+
 	ib := newInfoblox(ibDrv)
 	rpc.Register(ib)
 	rpc.HandleHTTP()
 	http.Serve(l, nil)
-}
-
-func main() {
-	config := LoadConfig()
-	runDaemon(config)
 }
