@@ -1,6 +1,10 @@
-COMMON_SOURCES=config.go driver-socket.go cmdargs.go
-PLUGIN_SOURCES=plugin.go $(COMMON_SOURCES)
-DAEMON_SOURCES=daemon.go infoblox-ipam.go $(COMMON_SOURCES)
+PLUGIN_DIR=plugin
+DAEMON_DIR=daemon
+
+COMMON_SOURCES=config.go driver-socket.go cmdargs.go infoblox-ipam.go
+PLUGIN_SOURCES=$(PLUGIN_DIR)/plugin.go $(COMMON_SOURCES)
+DAEMON_SOURCES=$(DAEMON_DIR)/daemon.go $(COMMON_SOURCES)
+
 PLUGIN_BINARY=infoblox-plugin
 DAEMON_BINARY=infoblox-daemon
 ALL_BINARIES=$(PLUGIN_BINARY) $(DAEMON_BINARY)
@@ -18,10 +22,10 @@ all: build
 build: $(ALL_BINARIES)
 
 $(PLUGIN_BINARY): $(PLUGIN_SOURCES)
-	go build -o $(PLUGIN_BINARY) $(PLUGIN_SOURCES)
+	cd $(PLUGIN_DIR); go build -o ../$(PLUGIN_BINARY)
 
-$(DAEMON_BINARY): $(DAEMON_SOURCES)
-	go build -o $(DAEMON_BINARY) $(DAEMON_SOURCES)
+$(DAEMON_BINARY):$(DAEMON_SOURCES)
+	cd $(DAEMON_DIR); go build -o ../$(DAEMON_BINARY)
 
 # Delete binary for clean build
 clean:
