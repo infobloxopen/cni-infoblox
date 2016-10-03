@@ -31,15 +31,26 @@ type Container struct {
 	exhausted        bool
 }
 
+type IBInfobloxDriver interface {
+	RequestNetworkView(netviewName string) (string, error)
+	RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error)
+	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
+	RequestNetwork(netconf NetConfig) (network string, err error)
+}
+
 type InfobloxDriver struct {
-	objMgr       *ibclient.ObjectManager
-	networkView  string
-	prefixLength uint
-	containers   []Container
+	objMgr     ibclient.IBObjectManager
+	containers []Container
+
+	DefaultNetworkView string
+	DefaultPrefixLen   uint
 }
 
 func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, error) {
 	var netview *ibclient.NetworkView
+	if netviewName == "" {
+		netviewName = ibDrv.DefaultNetworkView
+	}
 	netview, _ = ibDrv.objMgr.GetNetworkView(netviewName)
 
 	if netview == nil {
@@ -52,8 +63,13 @@ func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, err
 
 func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
 	var fixedAddr *ibclient.FixedAddress
+
+	if netviewName == "" {
+		netviewName = ibDrv.DefaultNetworkView
+	}
+
 	if len(macAddr) == 0 {
-		log.Printf("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.")
+		log.Println("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.")
 	} else {
 		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
 	}
@@ -68,7 +84,7 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 
 func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error) {
 	if netviewName == "" {
-		netviewName = ibDrv.networkView
+		netviewName = ibDrv.DefaultNetworkView
 	}
 	ref, err = ibDrv.objMgr.ReleaseIP(netviewName, "", ipAddr, macAddr)
 	if ref == "" {
@@ -88,7 +104,7 @@ func (ibDrv *InfobloxDriver) createNetworkContainer(netview string, pool string)
 }
 
 func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
-	for i, _ := range ibDrv.containers {
+	for i := range ibDrv.containers {
 		if !ibDrv.containers[i].exhausted {
 			return &ibDrv.containers[i]
 		}
@@ -98,7 +114,7 @@ func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
 }
 
 func (ibDrv *InfobloxDriver) resetContainers() {
-	for i, _ := range ibDrv.containers {
+	for i := range ibDrv.containers {
 		ibDrv.containers[i].exhausted = false
 	}
 }
@@ -111,7 +127,7 @@ func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uin
 		if container.ContainerObj == nil {
 			var err error
 			container.ContainerObj, err = ibDrv.createNetworkContainer(netview, container.NetworkContainer)
-			if err != nil {
+			if err != nil || container.ContainerObj == nil {
 				return nil, err
 			}
 		}
@@ -129,12 +145,12 @@ func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uin
 func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string) (network *ibclient.Network, err error) {
 	log.Printf("allocateNetwork: prefixLen='%d', name='%s'", prefixLen, name)
 	if prefixLen == 0 {
-		prefixLen = ibDrv.prefixLength
+		prefixLen = ibDrv.DefaultPrefixLen
 	}
-	network, err = ibDrv.allocateNetworkHelper(ibDrv.networkView, prefixLen, name)
+	network, err = ibDrv.allocateNetworkHelper(ibDrv.DefaultNetworkView, prefixLen, name)
 	if network == nil {
 		ibDrv.resetContainers()
-		network, err = ibDrv.allocateNetworkHelper(ibDrv.networkView, prefixLen, name)
+		network, err = ibDrv.allocateNetworkHelper(ibDrv.DefaultNetworkView, prefixLen, name)
 	}
 
 	if network == nil {
@@ -192,10 +208,10 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 			ibNetwork = networkByName
 		} else {
 			if netviewName == "" {
-				netviewName = ibDrv.networkView
+				netviewName = ibDrv.DefaultNetworkView
 			}
-			if netviewName == ibDrv.networkView {
-				prefixLen := ibDrv.prefixLength
+			if netviewName == ibDrv.DefaultNetworkView {
+				prefixLen := ibDrv.DefaultPrefixLen
 				if netconf.IPAM.PrefixLength != 0 {
 					prefixLen = netconf.IPAM.PrefixLength
 				}
@@ -208,11 +224,10 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 	}
 
 	log.Printf("RequestNetwork: result='%s'", ibNetwork)
-	res := ""
 	if ibNetwork != nil {
-		res = ibNetwork.Cidr
+		network = ibNetwork.Cidr
 	}
-	return res, err
+	return network, err
 }
 
 func makeContainers(containerList string) []Container {
@@ -226,11 +241,11 @@ func makeContainers(containerList string) []Container {
 	return containers
 }
 
-func NewInfobloxDriver(objMgr *ibclient.ObjectManager, networkView string, networkContainer string, prefixLength uint) *InfobloxDriver {
+func NewInfobloxDriver(objMgr ibclient.IBObjectManager, networkView string, networkContainer string, prefixLength uint) *InfobloxDriver {
 	return &InfobloxDriver{
-		objMgr:       objMgr,
-		networkView:  networkView,
-		prefixLength: prefixLength,
-		containers:   makeContainers(networkContainer),
+		objMgr:             objMgr,
+		DefaultNetworkView: networkView,
+		DefaultPrefixLen:   prefixLength,
+		containers:         makeContainers(networkContainer),
 	}
 }
