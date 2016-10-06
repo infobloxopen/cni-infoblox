@@ -1,4 +1,4 @@
-package main
+package ibcni
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -27,7 +27,7 @@ var _ = Describe("LoadConfig", func() {
 			PrefixLength     = "25"
 		)
 
-		cmdLine := fmt.Sprintf("infoblox-daemon --grid-host=%s --wapi-port=%s --wapi-username=%s --wapi-password=%s --wapi-version=%s --socket-dir=%s --driver-name=%s --ssl-verify=%s --network-view=%s --network-container=%s --prefix-length=%s",
+		cmdLine := fmt.Sprintf("infoblox-cni-daemon --grid-host=%s --wapi-port=%s --wapi-username=%s --wapi-password=%s --wapi-version=%s --socket-dir=%s --driver-name=%s --ssl-verify=%s --network-view=%s --network-container=%s --prefix-length=%s",
 			GridHost, WapiPort, WapiUsername, WapiPassword, WapiVersion,
 			SocketDir, DriverName, SslVerify, NetworkView, NetworkContainer, PrefixLength)
 

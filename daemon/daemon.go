@@ -25,6 +25,7 @@ import (
 	"runtime"
 
 	"github.com/containernetworking/cni/pkg/types"
+	. "github.com/infobloxopen/cni-infoblox"
 	ibclient "github.com/infobloxopen/infoblox-go-client"
 )
 
@@ -139,4 +140,9 @@ func runDaemon(config *Config) {
 	rpc.Register(ib)
 	rpc.HandleHTTP()
 	http.Serve(l, nil)
+}
+
+func main() {
+	config := LoadConfig()
+	runDaemon(config)
 }

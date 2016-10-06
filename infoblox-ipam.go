@@ -13,7 +13,7 @@
 //    License for the specific language governing permissions and limitations
 //    under the License.
 
-package main
+package ibcni
 
 import (
 	"errors"
@@ -40,7 +40,7 @@ type IBInfobloxDriver interface {
 
 type InfobloxDriver struct {
 	objMgr     ibclient.IBObjectManager
-	containers []Container
+	Containers []Container
 
 	DefaultNetworkView string
 	DefaultPrefixLen   uint
@@ -104,9 +104,9 @@ func (ibDrv *InfobloxDriver) createNetworkContainer(netview string, pool string)
 }
 
 func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
-	for i := range ibDrv.containers {
-		if !ibDrv.containers[i].exhausted {
-			return &ibDrv.containers[i]
+	for i := range ibDrv.Containers {
+		if !ibDrv.Containers[i].exhausted {
+			return &ibDrv.Containers[i]
 		}
 	}
 
@@ -114,8 +114,8 @@ func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
 }
 
 func (ibDrv *InfobloxDriver) resetContainers() {
-	for i := range ibDrv.containers {
-		ibDrv.containers[i].exhausted = false
+	for i := range ibDrv.Containers {
+		ibDrv.Containers[i].exhausted = false
 	}
 }
 
@@ -246,6 +246,6 @@ func NewInfobloxDriver(objMgr ibclient.IBObjectManager, networkView string, netw
 		objMgr:             objMgr,
 		DefaultNetworkView: networkView,
 		DefaultPrefixLen:   prefixLength,
-		containers:         makeContainers(networkContainer),
+		Containers:         makeContainers(networkContainer),
 	}
 }

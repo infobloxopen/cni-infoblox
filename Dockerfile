@@ -1,6 +1,6 @@
 FROM ubuntu
 
-ADD infoblox-daemon /usr/local/bin/infoblox-daemon
+ADD infoblox-cni-daemon /usr/local/bin/infoblox-cni-daemon
 
 
-ENTRYPOINT ["/usr/local/bin/infoblox-daemon"]
+ENTRYPOINT ["/usr/local/bin/infoblox-cni-daemon"]

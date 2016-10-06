@@ -1,4 +1,4 @@
-package main
+package ibcni
 
 import (
 	. "github.com/onsi/ginkgo"
