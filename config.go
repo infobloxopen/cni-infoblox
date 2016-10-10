@@ -13,7 +13,7 @@
 //    License for the specific language governing permissions and limitations
 //    under the License.
 
-package main
+package ibcni
 
 import (
 	"flag"
@@ -62,8 +62,8 @@ func LoadConfig() (config *Config) {
 	flag.StringVar(&config.WapiPassword, "wapi-password", "", "Infoblox WAPI Password")
 	flag.StringVar(&config.SslVerify, "ssl-verify", "false", "Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate.")
 	flag.StringVar(&config.NetworkView, "network-view", "default", "Infoblox Network View")
-	flag.StringVar(&config.NetworkContainer, "network-container", "172.18.0.0/16", "Subnets will be allocated from this container if subnet is not specified in IPAM config")
-	flag.UintVar(&config.PrefixLength, "prefix-length", 24, "The default CIDR prefix length when allocating a subnet from Network Container")
+	flag.StringVar(&config.NetworkContainer, "network-container", "172.18.0.0/16", "Subnets will be allocated from this container if subnet is not specified in network config file")
+	flag.UintVar(&config.PrefixLength, "prefix-length", 24, "The CIDR prefix length when allocating a subnet from Network Container")
 	config.HttpRequestTimeout = HTTP_REQUEST_TIMEOUT
 	config.HttpPoolConnections = HTTP_POOL_CONNECTIONS
 

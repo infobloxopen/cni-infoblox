@@ -27,6 +27,7 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
+	. "github.com/infobloxopen/cni-infoblox"
 )
 
 func runPlugin() {
@@ -121,4 +122,8 @@ func rpcCall(method string, args *ExtCmdArgs, result interface{}) error {
 	}
 
 	return nil
+}
+
+func main() {
+	runPlugin()
 }

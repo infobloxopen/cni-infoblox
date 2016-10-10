@@ -6,7 +6,7 @@ PLUGIN_SOURCES=$(PLUGIN_DIR)/plugin.go $(COMMON_SOURCES)
 DAEMON_SOURCES=$(DAEMON_DIR)/daemon.go $(COMMON_SOURCES)
 
 PLUGIN_BINARY=infoblox-plugin
-DAEMON_BINARY=infoblox-daemon
+DAEMON_BINARY=infoblox-cni-daemon
 ALL_BINARIES=$(PLUGIN_BINARY) $(DAEMON_BINARY)
 
 DAEMON_ACI_IMAGE=infoblox-cni-daemon.aci

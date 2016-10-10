@@ -1,4 +1,4 @@
-package ibcni_test
+package main_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCniInfoblox(t *testing.T) {
+func TestDaemon(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CniInfoblox Suite")
+	RunSpecs(t, "Daemon Suite")
 }
