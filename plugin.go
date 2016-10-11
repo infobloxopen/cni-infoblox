@@ -29,7 +29,7 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 )
 
-func main() {
+func runPlugin() {
 	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
 }
 
