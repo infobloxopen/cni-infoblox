@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/containernetworking/cni/pkg/types"
+	. "github.com/infobloxopen/cni-infoblox"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -192,8 +194,8 @@ var _ = Describe("Daemon", func() {
 		It("Should initialize driver with expected values", func() {
 			Expect(ibDrv.DefaultNetworkView).To(Equal(config.NetworkView))
 			Expect(ibDrv.DefaultPrefixLen).To(Equal(config.PrefixLength))
-			Expect(len(ibDrv.containers)).To(Equal(len(containersArr)))
-			for i, c := range ibDrv.containers {
+			Expect(len(ibDrv.Containers)).To(Equal(len(containersArr)))
+			for i, c := range ibDrv.Containers {
 				Expect(c.NetworkContainer).To(Equal(containersArr[i]))
 			}
 		})
