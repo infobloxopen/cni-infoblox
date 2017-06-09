@@ -26,12 +26,13 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	. "github.com/infobloxopen/cni-infoblox"
 )
 
 func runPlugin() {
-	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
+	skel.PluginMain(cmdAdd, cmdDel, version.All)
 }
 
 type InterfaceInfo struct {
@@ -72,17 +73,24 @@ func getMacAddress(netns string, ifaceName string) (mac string) {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	result := types.Result{}
+	// Plugin must return result in same version as specified in netconf
+	versionDecoder := &version.ConfigDecoder{}
+	confVersion, err := versionDecoder.Decode(args.StdinData)
+	if err != nil {
+		return err
+	}
+
+	result := &current.Result{}
 	extArgs := &ExtCmdArgs{CmdArgs: *args}
 
 	mac := getMacAddress(args.Netns, args.IfName)
 
 	extArgs.IfMac = mac
-	if err := rpcCall("Infoblox.Allocate", extArgs, &result); err != nil {
+	if err := rpcCall("Infoblox.Allocate", extArgs, result); err != nil {
 		return err
 	}
 
-	return result.Print()
+	return types.PrintResult(result, confVersion)
 }
 
 func cmdDel(args *skel.CmdArgs) error {
@@ -94,6 +102,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	if err := rpcCall("Infoblox.Release", extArgs, &result); err != nil {
 		return fmt.Errorf("error dialing Infoblox daemon: %v", err)
 	}
+
 	return nil
 }
 
