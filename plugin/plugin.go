@@ -45,6 +45,9 @@ func getMacAddress(netns string, ifaceName string) (mac string) {
 	ifaceInfo := &InterfaceInfo{}
 	if netns == "" {
 		ifaceInfo.iface, err = net.InterfaceByName(ifaceName)
+		if err != nil {
+			return ""
+		}
 		mac = ifaceInfo.iface.HardwareAddr.String()
 
 	} else {

@@ -44,6 +44,7 @@ func newInfoblox(drv IBInfobloxDriver) *Infoblox {
 // Allocate acquires an IP from Infoblox for a specified container.
 func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err error) {
 	conf := NetConfig{}
+	log.Printf("Allocate: called with args '%s'", *args)
 	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
@@ -63,14 +64,22 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 	mac := args.IfMac
 
-	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, subnet, mac)
-	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, "", mac, args.ContainerID)
-        log.Printf("Allocated IP: '%s'", ip)
-        hwAddr, err := hwaddr.GenerateHardwareAddr4(net.ParseIP(ip), hwaddr.PrivateMACPrefix)
-        if err == nil {
-                ip, _ = ib.Drv.UpdateAddress(netviewName, subnet, ip, hwAddr.String(), args.ContainerID)
-        }
-	ipn, _ := types.ParseCIDR(subnet)
+	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)
+}
+
+func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
+
+	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
+	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, args.ContainerID)
+
+	log.Printf("Allocated IP: '%s'", ip)
+
+	hwAddr, err := hwaddr.GenerateHardwareAddr4(net.ParseIP(ip), hwaddr.PrivateMACPrefix)
+	if err != nil {
+		log.Printf("Problem while generating hardware address using ip")
+	}
+	ip = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
+	ipn, _ := types.ParseCIDR(cidr)
 	ipn.IP = net.ParseIP(ip)
 	ipConfig := &current.IPConfig{
 		Version: "4",
@@ -83,6 +92,15 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 	log.Printf("Allocate result: '%s'", result)
 	return nil
+}
+
+func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string, macAddr string) string {
+	var fixedAddr *ibclient.FixedAddress
+	fixedAddr, _ = ib.Drv.GetAddress(netviewName, cidr, ipAddr, "")
+	if fixedAddr != nil {
+		ipAddr, _ = ib.Drv.UpdateAddress(fixedAddr, macAddr, "")
+	}
+	return ipAddr
 }
 
 func convertRoutesToCurrent(routes []types.Route) []*types.Route {
@@ -134,7 +152,7 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
 		requestBuilder, requestor)
 
-	objMgr := ibclient.NewObjectManager(conn, "Rkt", "RktEngineID")
+	objMgr := ibclient.NewObjectManager(conn, "CNI", "CNIEngineID")
 
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }
