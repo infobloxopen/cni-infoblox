@@ -76,9 +76,12 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 
 	hwAddr, err := hwaddr.GenerateHardwareAddr4(net.ParseIP(ip), hwaddr.PrivateMACPrefix)
 	if err != nil {
-		log.Printf("Problem while generating hardware address using ip")
+		log.Printf("Problem while generating hardware address using ip: %s", err)
 	}
-	ip = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
+	_, err = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
+	if err != nil {
+		log.Printf("Problem while updating MacAddress: %s", err)
+	}
 	ipn, _ := types.ParseCIDR(cidr)
 	ipn.IP = net.ParseIP(ip)
 	ipConfig := &current.IPConfig{
@@ -94,13 +97,17 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 	return nil
 }
 
-func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string, macAddr string) string {
-	var fixedAddr *ibclient.FixedAddress
-	fixedAddr, _ = ib.Drv.GetAddress(netviewName, cidr, ipAddr, "")
-	if fixedAddr != nil {
-		ipAddr, _ = ib.Drv.UpdateAddress(fixedAddr, macAddr, "")
+func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string, macAddr string) (string, error) {
+
+	fixedAddr, err := ib.Drv.GetAddress(netviewName, cidr, ipAddr, "")
+	if fixedAddr == nil {
+		return "", err
 	}
-	return ipAddr
+	updatedFixedAddr, err := ib.Drv.UpdateAddress(fixedAddr.Ref, macAddr, "")
+	if updatedFixedAddr == nil {
+		return "", err
+	}
+	return "", nil
 }
 
 func convertRoutesToCurrent(routes []types.Route) []*types.Route {

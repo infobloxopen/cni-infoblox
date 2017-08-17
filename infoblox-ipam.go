@@ -35,7 +35,7 @@ type IBInfobloxDriver interface {
 	RequestNetworkView(netviewName string) (string, error)
 	RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error)
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
-	UpdateAddress(fixedAddr *ibclient.FixedAddress, macAddr string, vmID string) (string, error)
+	UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
 	RequestNetwork(netconf NetConfig) (network string, err error)
 }
@@ -64,13 +64,12 @@ func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, err
 }
 
 func (ibDrv *InfobloxDriver) GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error) {
-	var fixedAddr *ibclient.FixedAddress
 	if netviewName == "" {
 		netviewName = ibDrv.DefaultNetworkView
 	}
-	fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
+	fixedAddr, err := ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
 
-	return fixedAddr, nil
+	return fixedAddr, err
 }
 
 func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
@@ -94,12 +93,12 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
 }
 
-func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddr *ibclient.FixedAddress, macAddr string, vmID string) (string, error) {
+func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error) {
 
-	fixedAddr, _ = ibDrv.objMgr.UpdateFixedAddress(fixedAddr, macAddr, vmID)
+	fixedAddr, err := ibDrv.objMgr.UpdateFixedAddress(fixedAddrRef, macAddr, vmID)
 
 	log.Printf("UpdateAddress: fixedAddr result is '%s'", *fixedAddr)
-	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
+	return fixedAddr, err
 }
 
 func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error) {
