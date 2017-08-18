@@ -96,8 +96,9 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error) {
 
 	fixedAddr, err := ibDrv.objMgr.UpdateFixedAddress(fixedAddrRef, macAddr, vmID)
-
-	log.Printf("UpdateAddress: fixedAddr result is '%s'", *fixedAddr)
+	if err != nil {
+		log.Printf("UpdateAddress failed with error '%s'", err)
+	}
 	return fixedAddr, err
 }
 
