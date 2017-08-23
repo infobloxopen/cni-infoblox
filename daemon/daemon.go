@@ -25,6 +25,8 @@ import (
 	"runtime"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
+	"github.com/containernetworking/cni/pkg/utils/hwaddr"
 	. "github.com/infobloxopen/cni-infoblox"
 	ibclient "github.com/infobloxopen/infoblox-go-client"
 )
@@ -40,8 +42,9 @@ func newInfoblox(drv IBInfobloxDriver) *Infoblox {
 }
 
 // Allocate acquires an IP from Infoblox for a specified container.
-func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *types.Result) (err error) {
+func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err error) {
 	conf := NetConfig{}
+	log.Printf("Allocate: called with args '%s'", *args)
 	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
@@ -61,19 +64,64 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *types.Result) (err error)
 
 	mac := args.IfMac
 
-	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, subnet, mac)
-	ip, _ := ib.Drv.RequestAddress(netviewName, subnet, "", mac, args.ContainerID)
+	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)
+}
 
-	ipn, _ := types.ParseCIDR(subnet)
-	ipn.IP = net.ParseIP(ip)
-	result.IP4 = &types.IPConfig{
-		IP:      *ipn,
-		Gateway: conf.IPAM.Gateway,
-		Routes:  conf.IPAM.Routes,
+func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
+
+	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
+	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, args.ContainerID)
+
+	log.Printf("Allocated IP: '%s'", ip)
+
+	hwAddr, err := hwaddr.GenerateHardwareAddr4(net.ParseIP(ip), hwaddr.PrivateMACPrefix)
+	if err != nil {
+		log.Printf("Problem while generating hardware address using ip: %s", err)
+		return err
 	}
+	err = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
+	if err != nil {
+		log.Printf("Problem while updating MacAddress: %s", err)
+		return err
+	}
+	ipn, _ := types.ParseCIDR(cidr)
+	ipn.IP = net.ParseIP(ip)
+	ipConfig := &current.IPConfig{
+		Version: "4",
+		Address: *ipn,
+		Gateway: conf.IPAM.Gateway,
+	}
+	routes := convertRoutesToCurrent(conf.IPAM.Routes)
+	result.IPs = []*current.IPConfig{ipConfig}
+	result.Routes = routes
 
 	log.Printf("Allocate result: '%s'", result)
 	return nil
+}
+
+func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string, macAddr string) error {
+
+	fixedAddr, err := ib.Drv.GetAddress(netviewName, cidr, ipAddr, "")
+	if err != nil {
+		return err
+	}
+	updatedFixedAddr, err := ib.Drv.UpdateAddress(fixedAddr.Ref, macAddr, "")
+	if err != nil {
+		return err
+	}
+	log.Printf("UpdatedAddress: fixedAddr result is '%s'", *updatedFixedAddr)
+	return nil
+}
+
+func convertRoutesToCurrent(routes []types.Route) []*types.Route {
+	var currentRoutes []*types.Route
+	for _, r := range routes {
+		currentRoutes = append(currentRoutes, &types.Route{
+			Dst: r.Dst,
+			GW:  r.GW,
+		})
+	}
+	return currentRoutes
 }
 
 func (ib *Infoblox) Release(args *ExtCmdArgs, reply *struct{}) error {
@@ -114,7 +162,7 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
 		requestBuilder, requestor)
 
-	objMgr := ibclient.NewObjectManager(conn, "Rkt", "RktEngineID")
+	objMgr := ibclient.NewObjectManager(conn, "CNI", "CNIEngineID")
 
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }

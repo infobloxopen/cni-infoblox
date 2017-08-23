@@ -34,6 +34,8 @@ type Container struct {
 type IBInfobloxDriver interface {
 	RequestNetworkView(netviewName string) (string, error)
 	RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error)
+	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
+	UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
 	RequestNetwork(netconf NetConfig) (network string, err error)
 }
@@ -61,6 +63,15 @@ func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, err
 	return netview.Name, nil
 }
 
+func (ibDrv *InfobloxDriver) GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error) {
+	if netviewName == "" {
+		netviewName = ibDrv.DefaultNetworkView
+	}
+	fixedAddr, err := ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
+
+	return fixedAddr, err
+}
+
 func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
 	var fixedAddr *ibclient.FixedAddress
 
@@ -80,6 +91,15 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 
 	log.Printf("RequestAddress: fixedAddr result is '%s'", *fixedAddr)
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
+}
+
+func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error) {
+
+	fixedAddr, err := ibDrv.objMgr.UpdateFixedAddress(fixedAddrRef, macAddr, vmID)
+	if err != nil {
+		log.Printf("UpdateAddress failed with error '%s'", err)
+	}
+	return fixedAddr, err
 }
 
 func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error) {
