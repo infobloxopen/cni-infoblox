@@ -67,6 +67,7 @@ Infoblox IPAM Driver Configuration
 The Infoblox IPAM Driver is comprised of two components:
 - Infoblox IPAM Plugin (infoblox):
   This is the plugin executable specified as the IPAM type in the netconf. This is executed by CNI as a network
+
 plugin and, by default in a rkt environment, is located in the ```/usr/lib/rkt/plugins/net``` directory.
 - Infoblox IPAM Daemon (infoblox-cni-daemon):
   This is the component that interfaces with Infoblox to perform the IPAM functions. This is typically deployed
@@ -108,6 +109,7 @@ effect when the same setting have not been specified in the network configuratio
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
 NOTE:WAPI Version should be above 2.3
+
 It is recommended that the Infoblox IPAM Daemon be run as a container. A docker image is availabe in Docker Hub
 (infoblox/infoblox-cni-daemon). A skeleton shell script (run-rkt-daemon.sh) to run the docker image using rkt is
 included. The shell script need to be executed with root permission.
