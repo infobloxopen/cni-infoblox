@@ -91,6 +91,7 @@ effect when the same setting have not been specified in the network configuratio
 	Infoblox WAPI Password (default "")
 --wapi-version string
 	Infoblox WAPI Version (default "2.3")
+
 --ssl-verify string
 	Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate. (default "false")
 
@@ -142,6 +143,7 @@ rkt run --interactive --net=net-1 quay.io/fermayo/ubuntu
 
 When the container comes up, verify using the "ifconfig" command that IP has been successfully provisioned
 from Infoblox.
+
 Note
 -----
 CNI: Use the code from the tag 0.5.2 https://github.com/containernetworking/cni/tree/v0.5.2
