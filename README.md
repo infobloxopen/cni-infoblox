@@ -146,4 +146,4 @@ from Infoblox.
 
 Note
 -----
-CNI: Use the code from the tag 0.5.2 https://github.com/containernetworking/cni/tree/v0.5.2
+This plugin supports CNI version 0.5.2 https://github.com/containernetworking/cni/tree/v0.5.2
