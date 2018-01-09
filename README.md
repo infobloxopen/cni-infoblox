@@ -147,3 +147,7 @@ from Infoblox.
 Note
 -----
 This plugin supports CNI version 0.5.2 https://github.com/containernetworking/cni/tree/v0.5.2
+
+Known bug
+---------
+With the Rocket(rkt) deallocation of IP does not work. This is due to unavailability of a feature in Rocket. https://github.com/infobloxopen/cni-infoblox/pull/10
