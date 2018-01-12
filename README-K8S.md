@@ -125,7 +125,7 @@ effect when the same setting have not been specified in the network configuratio
 --network-view string
 	Infoblox Network View (default "default")
 --network-container string
-	Subnets will be allocated from this container if subnet is not specified in network config file (default "172.18.0.0/16")
+	Subnets will be allocated from this container if subnet is not specified in network config file (default "172.18.0.0/16") . To have multiple subnet add comma separated subnet. (ex. "192.168.0.0/24,192.169.0.0/24")
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
