@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: infoblox-cni-daemon
+spec:
+  selector:
+      matchLabels:
+        name: infoblox-cni-daemon
+  template:
+    metadata:
+      labels:
+        name: infoblox-cni-daemon
+    spec:
+      terminationGracePeriodSeconds: 60
+      hostNetwork: true
+      containers:
+      - image: infoblox/infoblox-cni-daemon
+        name: infoblox-cni-daemon
+        volumeMounts:
+            - mountPath: /run/cni
+              name: socket-dir
+        imagePullPolicy: Always
+        args:
+          - "--grid-host=192.168.124.200"
+          - "--wapi-port=443"
+          - "--wapi-username=admin"
+          - "--wapi-password=infoblox"
+          - "--wapi-version=2.3"
+          - "--socket-dir=/run/cni"
+          - "--driver-name=infoblox"
+          - "--ssl-verify=false"
+          - "--network-view=default"
+          - "--network-container=192.168.0.0/24,192.169.0.0/24"
+          - "--prefix-length=25"
+      volumes:
+        - name: socket-dir
+          hostPath:
+            path: /run/cni
