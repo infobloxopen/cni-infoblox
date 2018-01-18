@@ -26,7 +26,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
-	"github.com/containernetworking/cni/pkg/utils/hwaddr"
+	"github.com/containernetworking/plugins/pkg/utils/hwaddr"
 	. "github.com/infobloxopen/cni-infoblox"
 	ibclient "github.com/infobloxopen/infoblox-go-client"
 )
@@ -74,15 +74,20 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 
 	log.Printf("Allocated IP: '%s'", ip)
 
-	hwAddr, err := hwaddr.GenerateHardwareAddr4(net.ParseIP(ip), hwaddr.PrivateMACPrefix)
-	if err != nil {
-		log.Printf("Problem while generating hardware address using ip: %s", err)
-		return err
-	}
-	err = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
-	if err != nil {
-		log.Printf("Problem while updating MacAddress: %s", err)
-		return err
+	// As bridge plugin in CNI generates MAC address based on ip, so the daemon also generating MAC address based on
+	// ip and updating GRID host with the new MAC address
+	if conf.Type == "bridge" {
+		hwAddr, err := hwaddr.GenerateHardwareAddr4(net.ParseIP(ip), hwaddr.PrivateMACPrefix)
+		if err != nil {
+			log.Printf("Problem while generating hardware address using ip: %s", err)
+			return err
+		}
+
+		err = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
+		if err != nil {
+			log.Printf("Problem while updating MacAddress: %s", err)
+			return err
+		}
 	}
 	ipn, _ := types.ParseCIDR(cidr)
 	ipn.IP = net.ParseIP(ip)
