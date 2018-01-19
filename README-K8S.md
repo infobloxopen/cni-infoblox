@@ -36,7 +36,7 @@ kubectl - 1.9.0-00
 kubelet - 1.9.0-00
 kubernetes-cni - 0.6.0-00
 
-CNI source used to build the plugin and daemon - tag v0.5.2
+CNI source used to build the plugin and daemon - 0.6.0
 Wapi version - 2.3
 ```
 
