@@ -15,7 +15,7 @@ To use the plugin, you need access to the Infoblox DDI product. For evaluation p
 virtual version of the product from the [Infoblox Download Center](https://www.infoblox.com/infoblox-download-center).
 Alternatively, if you are an existing Infoblox customer, you can download it from the support site.
 
-Refer to CONFIG.md for details on vNIOS configuration.
+Refer to [CONFIG.md](CONFIG.md) for details on vNIOS configuration.
 
 Build
 -----
