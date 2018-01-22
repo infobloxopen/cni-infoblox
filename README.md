@@ -7,14 +7,12 @@ Infoblox IPAM Driver for CNI
 cni-infoblox is an IPAM driver for CNI that interfaces with Infoblox to provide IP Address Management
 service. CNI is the generic plugin-based networking layer for supporting container runtime environments.
 
-For a detailed description of the driver, including a step by step deployment example, refer to the
-"CNI Networking and IPAM" community blog on the Infoblox website:
-https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828
+For a detailed description of the driver, including a step by step deployment example, refer to the community blog on the Infoblox website: [CNI Networking and IPAM](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
 
 Prerequisite
 ------------
 To use the plugin, you need access to the Infoblox DDI product. For evaluation purposes, you can download a
-virtual version of the product from the Infoblox Download Center (https://www.infoblox.com/infoblox-download-center)
+virtual version of the product from the [Infoblox Download Center](https://www.infoblox.com/infoblox-download-center).
 Alternatively, if you are an existing Infoblox customer, you can download it from the support site.
 
 Refer to CONFIG.md for details on vNIOS configuration.

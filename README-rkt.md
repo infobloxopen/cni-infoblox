@@ -4,7 +4,7 @@ CNI IPAM Driver for Rocket
 CNI Configuration
 -----------------
 This section concerns only with CNI network configuration as it relates to the Infoblox IPAM Driver.
-For details on CNI configuration in general, refer to https://github.com/containernetworking/cni/blob/master/README.md
+For details on CNI configuration in general, refer [here](https://github.com/containernetworking/cni/blob/master/README.md).
 
 To instruct CNI to execute the Infoblox IPAM plugin for a particular network, specify "infoblox" as the IPAM "type"
 in the CNI network configuration file (netconf). CNI configuration files in a rkt environment is typically
@@ -104,8 +104,7 @@ Various ways to run the daemon include:
 
 Usage
 -----
-For a detailed description of an example use of the Infoblox IPAM Daemon in multi host rkt deployment, refer to
-https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828
+For a detailed description of an example use of the Infoblox IPAM Daemon in multi host rkt deployment, refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
 
 Before you can start using the driver, the Infobblox IPAM Daemon must be started using one of the methods
 described in the section "Running the IPAM Daemon" above.

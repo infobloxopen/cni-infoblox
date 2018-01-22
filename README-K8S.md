@@ -6,8 +6,8 @@ Cluster setup
 
 For setting up a kubernetes cluster one can use kubeadm which is designed to be a simple way for new users to start 
 trying Kubernetes out. The following links can be useful.
-Installing Kubeadm - https://kubernetes.io/docs/setup/independent/install-kubeadm/
-Creating cluster - https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/ .
+[Install Kubeadm](https://kubernetes.io/docs/setup/independent/install-kubeadm) and
+[Create cluster](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm).
 
 Versions Used
 -------------
@@ -27,7 +27,7 @@ Wapi version - 2.3
 CNI Configuration
 -----------------
 This section concerns only with CNI network configuration as it relates to the Infoblox IPAM Driver.
-For details on CNI configuration in general, refer to https://github.com/containernetworking/cni/blob/master/README.md
+For details on CNI configuration in general, refer [here](https://github.com/containernetworking/cni/blob/master/README.md).
 
 To instruct CNI to execute the Infoblox IPAM plugin for a particular network, specify "infoblox" as the IPAM "type"
 in the CNI network configuration file (netconf). CNI configuration files in a kubernetes environment is typically
@@ -113,8 +113,7 @@ before starting the driver. A docker image is available in Docker Hub, which pac
 
 Usage
 -----
-For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer to
-https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828
+For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
 
 To use the driver start the daemonset as described in the section "Running the IPAM Daemon" above. Put the netconf file and plugin binary
 in specified location as described in "CNI Configuration" and "Infoblox IPAM Driver Configuration" section respectively.
