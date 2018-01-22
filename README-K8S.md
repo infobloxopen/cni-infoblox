@@ -1,24 +1,8 @@
 CNI IPAM Driver for Kubernetes
 ==============================
 
-Infoblox IPAM Driver for CNI
-----------------------------
-
-cni-infoblox is an IPAM driver for CNI that interfaces with Infoblox to provide IP Address Management
-service. CNI is the generic plugin-based networking layer for supporting container runtime environments,
-of which kubernetes is one.
-
-For a detailed description of the driver, including a step by step deployment example, refer to the
-"CNI Networking and IPAM" community blog on the Infolox website:
-https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828
-
-Prerequisite
-------------
-To use the plugin, you need access to the Infoblox DDI product. For evaluation purposes, you can download a
-virtual version of the product from the Infoblox Download Center (https://www.infoblox.com/infoblox-download-center)
-Alternatively, if you are an existing Infoblox customer, you can download it from the support site.
-
-Refer to CONFIG.md for details on vNIOS configuration.
+Cluster setup
+-------------
 
 For setting up a kubernetes cluster one can use kubeadm which is designed to be a simple way for new users to start 
 trying Kubernetes out. The following links can be useful.
@@ -39,11 +23,6 @@ kubernetes-cni - 0.6.0-00
 CNI source used to build the plugin and daemon - 0.6.0
 Wapi version - 2.3
 ```
-
-Build
------
-For dependencies and build instructions, refer to ```BUILD.md```.
-
 
 CNI Configuration
 -----------------
@@ -76,13 +55,10 @@ For example (/etc/cni/net.d/01-infoblox-ipam.conf):
 ```
 Note : The following type of networks are supported out of the box:
  ```
-       host-local
        bridge
        ipvlan
        macvlan
 ```  
-To run macvlan, the promiscuous mode in eth0 should be enabled on each node. The following command
-can be used to achieve it : ``ip link set eth0 promisc on``
 
 Infoblox IPAM Driver Configuration
 ----------------------------------
@@ -129,6 +105,7 @@ effect when the same setting have not been specified in the network configuratio
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
+NOTE:WAPI Version should be 2.3 or above
 
 It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kubernetes cluster. A yaml file (infoblox-daemonset.yaml) is used to create the daemonset in kubernetes cluster
 and can be done by the following command : ``kubectl create -f infoblox-daemonset.yaml`` . The daemonset should be created
