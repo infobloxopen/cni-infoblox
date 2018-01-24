@@ -36,8 +36,6 @@ The following are the IPAM attributes:
 Other Infoblox specific attributes that are not shown in the example configuration:
 - "network-container"
 - "prefix-length": Instead of specifying a "subnet", the driver can be instructed to allocate a network of prefix length (integer) from within a network container (CIDR).
-- "socket-dir": specifies an alternate directory where the socket file to send IPAM Daemon request to is located.
-The default is ```/run/cni```.
 
 Infoblox IPAM Driver Configuration
 ----------------------------------

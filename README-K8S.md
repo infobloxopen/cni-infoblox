@@ -60,6 +60,16 @@ Note : The following type of networks are supported out of the box:
        macvlan
 ```  
 
+The following are the IPAM attributes:
+- "type" (Required): specifies the plugin type and is also the file name of the plugin executable.
+- "subnet" (Optional): specifies the CIDR to be used for the network. This is a well-known CNI attribute and is used by the driver.
+- "gateway" (Optional): specifies the gateway for the network. This is a well-known CNI attribute and is simply passed through to CNI.
+- "routes" (Optional): specifies the routes for the network. This is a well-known CNI attribute and is simply passed through to CNI.
+- "network-view" (Optional): specifies the Infoblox network view to use for this network. This is a Infoblox IPAM driver specific attribute.
+Other Infoblox specific attributes that are not shown in the example configuration:
+- "network-container" (Optional):Subnets will be allocated from this container if subnet is not specified in network config file(default "172.18.0.0/16").To have multiple subnet add comma separated subnet. (ex. "192.168.0.0/24,192.169.0.0/24")
+- "prefix-length" (Optional): Instead of specifying a "subnet", the driver can be instructed to allocate a network of prefix length (integer) from within a network container (CIDR). 
+
 Infoblox IPAM Driver Configuration
 ----------------------------------
 The Infoblox IPAM Driver is comprised of two components:
