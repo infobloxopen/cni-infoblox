@@ -80,7 +80,7 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 	}
 
 	//cni is not calling gateway creation call, so it is implemented here
-	//if gateway is not created by customer it wont create as for now
+	//if gateway is not provided in net conf file by customer, it wont create as for now
 	//checking for gw ip already created ,if not creating
 	if gateway != "" {
 		gatewayIp, err := ibDrv.objMgr.GetFixedAddress(netviewName, cidr, gateway, "")
