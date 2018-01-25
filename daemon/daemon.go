@@ -51,6 +51,7 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 	cidr := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
 	netviewName := conf.IPAM.NetworkView
+	gw := conf.IPAM.Gateway
 	log.Printf("RequestNetwork: '%s', '%s'", netviewName, cidr.String())
 	netview, _ := ib.Drv.RequestNetworkView(netviewName)
 	if netview == "" {
@@ -64,13 +65,13 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 	mac := args.IfMac
 
-	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)
+	return ib.requestAddress(conf, args, result, netviewName, subnet, mac, gw)
 }
 
-func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
+func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string, gw net.IP) (err error) {
 
 	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
-	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, args.ContainerID)
+	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, gw, args.ContainerID)
 
 	log.Printf("Allocated IP: '%s'", ip)
 
