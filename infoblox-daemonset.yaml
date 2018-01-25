@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: infoblox-cni-daemon
+  namespace: kube-system
 spec:
   selector:
       matchLabels:

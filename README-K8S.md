@@ -1,29 +1,13 @@
 CNI IPAM Driver for Kubernetes
 ==============================
 
-Infoblox IPAM Driver for CNI
-----------------------------
-
-cni-infoblox is an IPAM driver for CNI that interfaces with Infoblox to provide IP Address Management
-service. CNI is the generic plugin-based networking layer for supporting container runtime environments,
-of which kubernetes is one.
-
-For a detailed description of the driver, including a step by step deployment example, refer to the
-"CNI Networking and IPAM" community blog on the Infolox website:
-https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828
-
-Prerequisite
-------------
-To use the plugin, you need access to the Infoblox DDI product. For evaluation purposes, you can download a
-virtual version of the product from the Infoblox Download Center (https://www.infoblox.com/infoblox-download-center)
-Alternatively, if you are an existing Infoblox customer, you can download it from the support site.
-
-Refer to CONFIG.md for details on vNIOS configuration.
+Cluster setup
+-------------
 
 For setting up a kubernetes cluster one can use kubeadm which is designed to be a simple way for new users to start 
 trying Kubernetes out. The following links can be useful.
-Installing Kubeadm - https://kubernetes.io/docs/setup/independent/install-kubeadm/
-Creating cluster - https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/ .
+[Install Kubeadm](https://kubernetes.io/docs/setup/independent/install-kubeadm) and
+[Create cluster](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm).
 
 Versions Used
 -------------
@@ -40,15 +24,10 @@ CNI source used to build the plugin and daemon - 0.6.0
 Wapi version - 2.3
 ```
 
-Build
------
-For dependencies and build instructions, refer to ```BUILD.md```.
-
-
 CNI Configuration
 -----------------
 This section concerns only with CNI network configuration as it relates to the Infoblox IPAM Driver.
-For details on CNI configuration in general, refer to https://github.com/containernetworking/cni/blob/master/README.md
+For details on CNI configuration in general, refer [here](https://github.com/containernetworking/cni/blob/master/README.md).
 
 To instruct CNI to execute the Infoblox IPAM plugin for a particular network, specify "infoblox" as the IPAM "type"
 in the CNI network configuration file (netconf). CNI configuration files in a kubernetes environment is typically
@@ -76,13 +55,20 @@ For example (/etc/cni/net.d/01-infoblox-ipam.conf):
 ```
 Note : The following type of networks are supported out of the box:
  ```
-       host-local
        bridge
        ipvlan
        macvlan
 ```  
-To run macvlan, the promiscuous mode in eth0 should be enabled on each node. The following command
-can be used to achieve it : ``ip link set eth0 promisc on``
+
+The following are the IPAM attributes:
+- "type" (Required): specifies the plugin type and is also the file name of the plugin executable.
+- "subnet" (Optional): specifies the CIDR to be used for the network. This is a well-known CNI attribute and is used by the driver.
+- "gateway" (Optional): specifies the gateway for the network. This is a well-known CNI attribute and is simply passed through to CNI.
+- "routes" (Optional): specifies the routes for the network. This is a well-known CNI attribute and is simply passed through to CNI.
+- "network-view" (Optional): specifies the Infoblox network view to use for this network. This is a Infoblox IPAM driver specific attribute.
+Other Infoblox specific attributes that are not shown in the example configuration:
+- "network-container" (Optional):Subnets will be allocated from this container if subnet is not specified in network config file(default "172.18.0.0/16").To have multiple subnet add comma separated subnet. (ex. "192.168.0.0/24,192.169.0.0/24")
+- "prefix-length" (Optional): Instead of specifying a "subnet", the driver can be instructed to allocate a network of prefix length (integer) from within a network container (CIDR). 
 
 Infoblox IPAM Driver Configuration
 ----------------------------------
@@ -129,6 +115,7 @@ effect when the same setting have not been specified in the network configuratio
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
+NOTE:WAPI Version should be 2.3 or above
 
 It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kubernetes cluster. A yaml file (infoblox-daemonset.yaml) is used to create the daemonset in kubernetes cluster
 and can be done by the following command : ``kubectl create -f infoblox-daemonset.yaml`` . The daemonset should be created
@@ -136,8 +123,7 @@ before starting the driver. A docker image is available in Docker Hub, which pac
 
 Usage
 -----
-For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer to
-https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828
+For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
 
 To use the driver start the daemonset as described in the section "Running the IPAM Daemon" above. Put the netconf file and plugin binary
 in specified location as described in "CNI Configuration" and "Infoblox IPAM Driver Configuration" section respectively.
