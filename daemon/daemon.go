@@ -63,15 +63,24 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 		return nil
 	}
 
+	//cni is not calling gateway creation call, so it is implemented here
+	//if gateway is not provided in net conf file by customer, it wont create as for now
+	if gw != nil {
+		if _, err := ib.Drv.CreateGateway(subnet, gw, netviewName); err != nil {
+			return fmt.Errorf("error creating gateway:%v", err)
+		}
+	}
+
 	mac := args.IfMac
 
-	return ib.requestAddress(conf, args, result, netviewName, subnet, mac, gw)
+	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)
 }
 
-func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string, gw net.IP) (err error) {
+
+func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
 
 	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
-	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, gw, args.ContainerID)
+	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, args.ContainerID)
 
 	log.Printf("Allocated IP: '%s'", ip)
 
