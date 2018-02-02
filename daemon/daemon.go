@@ -58,7 +58,7 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 		return nil
 	}
 
-	subnet, _ := ib.Drv.RequestNetwork(conf)
+	subnet, _ := ib.Drv.RequestNetwork(conf, netview)
 	if subnet == "" {
 		return nil
 	}

@@ -27,6 +27,7 @@ import (
 
 type Container struct {
 	NetworkContainer string // CIDR of Network Container
+	NetworkView string // Network view
 	ContainerObj     *ibclient.NetworkContainer
 	exhausted        bool
 }
@@ -37,7 +38,7 @@ type IBInfobloxDriver interface {
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
 	UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
-	RequestNetwork(netconf NetConfig) (network string, err error)
+	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
 }
 
 type InfobloxDriver struct {
@@ -151,6 +152,8 @@ func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
 func (ibDrv *InfobloxDriver) resetContainers() {
 	for i := range ibDrv.Containers {
 		ibDrv.Containers[i].exhausted = false
+		ibDrv.Containers[i].ContainerObj = nil
+		ibDrv.Containers[i].NetworkView = ""
 	}
 }
 
@@ -159,9 +162,10 @@ func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uin
 	container := ibDrv.nextAvailableContainer()
 	for container != nil {
 		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer)
-		if container.ContainerObj == nil {
+		if container.ContainerObj == nil || container.NetworkView != netview {
 			var err error
 			container.ContainerObj, err = ibDrv.createNetworkContainer(netview, container.NetworkContainer)
+			container.NetworkView = netview
 			if err != nil || container.ContainerObj == nil {
 				return nil, err
 			}
@@ -177,15 +181,15 @@ func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uin
 	return network, nil
 }
 
-func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string) (network *ibclient.Network, err error) {
+func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string, netviewName string) (network *ibclient.Network, err error) {
 	log.Printf("allocateNetwork: prefixLen='%d', name='%s'", prefixLen, name)
 	if prefixLen == 0 {
 		prefixLen = ibDrv.DefaultPrefixLen
 	}
-	network, err = ibDrv.allocateNetworkHelper(ibDrv.DefaultNetworkView, prefixLen, name)
+	network, err = ibDrv.allocateNetworkHelper(netviewName, prefixLen, name)
 	if network == nil {
 		ibDrv.resetContainers()
-		network, err = ibDrv.allocateNetworkHelper(ibDrv.DefaultNetworkView, prefixLen, name)
+		network, err = ibDrv.allocateNetworkHelper(netviewName, prefixLen, name)
 	}
 
 	if network == nil {
@@ -225,9 +229,9 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, err error) {
+func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName string) (network string, err error) {
 	var ibNetwork *ibclient.Network
-	netviewName := netconf.IPAM.NetworkView
+	// netviewName := netconf.IPAM.NetworkView
 	cidr := net.IPNet{}
 	log.Printf("RequestNetwork: IPAM.Subnet='%s'", netconf.IPAM.Subnet)
 	if netconf.IPAM.Subnet.IP != nil {
@@ -242,19 +246,11 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig) (network string, 
 			log.Printf("RequestNetwork: GetNetwork by name returns '%s'", *networkByName)
 			ibNetwork = networkByName
 		} else {
-			if netviewName == "" {
-				netviewName = ibDrv.DefaultNetworkView
+			prefixLen := ibDrv.DefaultPrefixLen
+			if netconf.IPAM.PrefixLength != 0 {
+				prefixLen = netconf.IPAM.PrefixLength
 			}
-			if netviewName == ibDrv.DefaultNetworkView {
-				prefixLen := ibDrv.DefaultPrefixLen
-				if netconf.IPAM.PrefixLength != 0 {
-					prefixLen = netconf.IPAM.PrefixLength
-				}
-				ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name)
-			} else {
-				log.Printf("RequestNetwork: Incorrect Network View name specified='%s'", netviewName)
-				return "", nil
-			}
+			ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name, netviewName)
 		}
 	}
 
@@ -270,7 +266,7 @@ func makeContainers(containerList string) []Container {
 
 	parts := strings.Split(containerList, ",")
 	for _, p := range parts {
-		containers = append(containers, Container{p, nil, false})
+		containers = append(containers, Container{p, "",nil, false})
 	}
 
 	return containers
