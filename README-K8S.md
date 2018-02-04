@@ -142,7 +142,7 @@ The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network confi
   ```
 It is recommended that the Infoblox IPAM Plugin and Network Config Daemon be run as a daemonset in kubernetes cluster. A yaml file (infoblox-cni-install.yaml) is used to create the daemonset in kubernetes cluster
 and can be done by the following command : ``kubectl create -f infoblox-cni-install.yaml`` . The daemonset should be created
-before starting the driver. A docker image is available in Docker Hub, which packages the daemon binary in an image (tgogoi/infoblox-cni-install) and used by the yaml file.
+before starting the driver. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-install) and used by the yaml file.
 
 Usage
 -----
