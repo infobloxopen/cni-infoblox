@@ -135,7 +135,7 @@ The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network confi
 ## Network Config file ##
 00-infoblox-ipam.conf: |
     {
-    "name": "inkal",
+    "name": "ipam-test",
     "type": "bridge",
     "bridge":"cni01",
     "ipam": {
