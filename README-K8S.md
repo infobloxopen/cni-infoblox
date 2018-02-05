@@ -44,12 +44,12 @@ For example (/etc/cni/net.d/01-infoblox-ipam.conf):
     "ipam": {
         "type": "infoblox",
         "subnet": "10.0.0.0/24",
-
-                "routes": [
-                        {"dst": "172.18.0.0/24",
-                         "gw":"10.0.0.1"}
+        "gateway": "10.0.0.1",
+        "routes": [
+                {"dst": "0.0.0.0"}
                 ],
-                "network-view": "cni_view"
+        "network-view": "cni_view"
+        "prefix-length":"24"
     }
 }
 ```
@@ -64,6 +64,12 @@ The following are the IPAM attributes:
 - "type" (Required): specifies the plugin type and is also the file name of the plugin executable.
 - "subnet" (Optional): specifies the CIDR to be used for the network. This is a well-known CNI attribute and is used by the driver.
 - "gateway" (Optional): specifies the gateway for the network. This is a well-known CNI attribute and is simply passed through to CNI.
+
+Note: if subnet is not provided in the conf.then, user needs to follow gateway format as given below:
+a) if default prefix-length(24) used then gateway will be in 0.0.0.x format.
+b) if prefix-length is provided then user should pass gateway in a away that new created subnet using network-container(default/user configured) should contain the gateway IP.
+c) for example if prefix length used as 18, then user can give gateway in 0.0.y.x format. but gateway should lies in 255.255.192.0 Netmask.
+
 - "routes" (Optional): specifies the routes for the network. This is a well-known CNI attribute and is simply passed through to CNI.
 - "network-view" (Optional): specifies the Infoblox network view to use for this network. This is a Infoblox IPAM driver specific attribute.
 Other Infoblox specific attributes that are not shown in the example configuration:
@@ -178,5 +184,5 @@ kubectl create -f test-app.yaml
 ```
 The command above starts test-infoblox-deployment with two pods. 
 
-When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned
-from Infoblox. To verify the pod connectivity, ping the 2nd pod from inside the 1st pod. 
+When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned from Infoblox. 
+To verify the pod connectivity, ping the 2nd pod from inside the 1st pod.
