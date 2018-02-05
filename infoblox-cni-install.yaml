@@ -10,7 +10,7 @@ metadata:
 data:
   00-infoblox-ipam.conf: |
     {
-    "name": "inkal",
+    "name": "ipam-test",
     "type": "bridge",
     "bridge":"cni01",
     "ipam": {
@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
       - name: install-cni
-        image: tgogoi/infoblox-cni-install
+        image: infoblox/infoblox-cni-install
         command: [ "/install/install-cni.sh" ]
         volumeMounts:
         - name: conf-loc
