@@ -129,7 +129,7 @@ before starting the driver. A docker image is available in Docker Hub, which pac
 
 Running the IPAM Plugin and Network Config Daemon
 -------------------------------------------------
-The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network config file to install into respective directories as mentioned above, Which will be taken care by the Daemon and only you have to run the Daemon. Here you can modify Network config file.
+The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network config file to install into respective directories as mentioned above, Which will be taken care by the Daemon and only you have to run the Daemon. Here you can modify Network config file, Once you modified you should delete ``kubectl delete -f infoblox-cni-install.yaml`` the Daemon and recreate ``kubectl create -f infoblox-cni-install.yaml`` it then the changes to network config will be applied.
 
 ```
 ## Network Config file ##
