@@ -47,11 +47,15 @@ docker-image: $(DAEMON_BINARY)
 push: docker-image
 	docker tag $(DAEMON_DOCKER_IMAGE) $(DEV_IMAGE)
 	docker push $(DEV_IMAGE)
+	docker tag $(INSTALL_DOCKER_IMAGE) $(INSTALL_DEV_IMAGE)
+	docker push $(INSTALL_DEV_IMAGE)
 
 # Push image to infoblox docker hub
 push-release: docker-image
 	docker tag $(DAEMON_DOCKER_IMAGE) $(RELEASE_IMAGE)
 	docker push $(RELEASE_IMAGE)
+	docker tag $(INSTALL_DOCKER_IMAGE) $(INSTALL_RELEASE_IMAGE)
+	docker push $(INSTALL_RELEASE_IMAGE)
 
 aci-image: $(DAEMON_ACI_IMAGE)
 
