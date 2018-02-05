@@ -38,7 +38,7 @@ type IBInfobloxDriver interface {
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
 	UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
-        RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
+	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
 	CreateGateway(cidr string,gw net.IP,netviewName string)(string,error)
 }
 
