@@ -38,7 +38,7 @@ type IBInfobloxDriver interface {
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
 	UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
-	RequestNetwork(netconf NetConfig) (network string, err error)
+	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
 	CreateGateway(cidr string,gw net.IP,netviewName string)(string,error)
 }
 
@@ -260,7 +260,7 @@ func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName stri
 			}
 		}
 		if subnet.Contains(gw)==false{
-			return "",errors.New("gateway given is invalid")
+			return "",fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'",subnet)
 
 		}
 	}
