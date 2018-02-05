@@ -1,0 +1,7 @@
+FROM busybox
+
+ADD infoblox-plugin /install/bin/infoblox
+
+ADD install-cni.sh /install/install-cni.sh
+RUN chmod +x /install/bin/infoblox
+RUN chmod +x /install/install-cni.sh

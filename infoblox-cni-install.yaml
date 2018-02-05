@@ -1,0 +1,70 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kube-cni-cfg
+  namespace: kube-system
+  labels:
+    tier: node
+    app: kube-cni-cfg
+data:
+  00-infoblox-ipam.conf: |
+    {
+    "name": "ipam-test",
+    "type": "bridge",
+    "bridge":"cni01",
+    "ipam": {
+        "type": "infoblox",
+        "subnet": "10.0.0.0/24",
+        "gateway":"10.0.0.1",
+        "network-view": "cni_view"
+        }
+    }
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-cni-install
+  namespace: kube-system
+  labels:
+    tier: node
+    k8s-app: kube-cni-install
+spec:
+  selector:
+      matchLabels:
+        name: kube-cni-install
+  template:
+    metadata:
+      labels:
+        name: kube-cni-install
+    spec:
+      containers:
+      - name: install-cni
+        image: infoblox/infoblox-cni-install
+        command: [ "/install/install-cni.sh" ]
+        volumeMounts:
+        - name: conf-loc
+          mountPath: /install/config
+        - name: host-cni-conf
+          mountPath: /host/etc/cni/net.d/
+        - name: host-cni-bin
+          mountPath: /host/opt/cni/bin/
+      hostNetwork: true
+      volumes:
+        - name: conf-loc
+          configMap:
+                name: kube-cni-cfg
+                items:
+                - key: 00-infoblox-ipam.conf
+                  path: 00-infoblox-ipam.conf
+        - name: host-cni-conf
+          hostPath:
+            path: /etc/cni/net.d
+        - name: host-cni-bin
+          hostPath:
+            path: /opt/cni/bin
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+

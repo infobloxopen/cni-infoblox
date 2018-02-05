@@ -127,6 +127,29 @@ It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kuberne
 and can be done by the following command : ``kubectl create -f infoblox-daemonset.yaml`` . The daemonset should be created
 before starting the driver. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-daemon) and used by the yaml file.
 
+Running the IPAM Plugin and Network Config Daemon
+-------------------------------------------------
+The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network config file to install into respective directories as mentioned above, Which will be taken care by the Daemon and only you have to run the Daemon. Here you can modify Network config file, Once you modified you should delete ``kubectl delete -f infoblox-cni-install.yaml`` the Daemon and recreate ``kubectl create -f infoblox-cni-install.yaml`` it then the changes to network config will be applied.
+
+```
+## Network Config file ##
+00-infoblox-ipam.conf: |
+    {
+    "name": "ipam-test",
+    "type": "bridge",
+    "bridge":"cni01",
+    "ipam": {
+        "type": "infoblox",
+        "subnet": "10.0.0.0/24",
+        "gateway":"10.0.0.1",
+        "network-view": "cni_view"
+        }
+    }
+  ```
+It is recommended that the Infoblox IPAM Plugin and Network Config Daemon be run as a daemonset in kubernetes cluster. A yaml file (infoblox-cni-install.yaml) is used to create the daemonset in kubernetes cluster
+and can be done by the following command : ``kubectl create -f infoblox-cni-install.yaml`` . The daemonset should be created
+before starting the driver. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-install) and used by the yaml file.
+
 Usage
 -----
 For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
@@ -161,5 +184,5 @@ kubectl create -f test-app.yaml
 ```
 The command above starts test-infoblox-deployment with two pods. 
 
-When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned
-from Infoblox. To verify the pod connectivity, ping the 2nd pod from inside the 1st pod.
+When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned from Infoblox. 
+To verify the pod connectivity, ping the 2nd pod from inside the 1st pod.

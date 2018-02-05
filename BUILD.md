@@ -31,16 +31,16 @@ to match the plugin type, typically ``infoblox``, specified in network configura
 The Makefile also includes the following targets:
 
 - docker-image:
-  Builds docker image ```infoblox-cni-daemon```
+  Builds docker images ```infoblox-cni-daemon``` and ```infoblox-cni-install```
 - aci-image:
   Builds ACI image ```infoblox-cni-daemon.aci```
 - images:
-  Builds both docker-image and aci-image
+  Builds both docker-images and aci-image
 
 
 Push Container Image to Docker Hub
 ----------------------------------
-The Makefile includes a build target to push the ```infoblox-cni-daemon``` container image to your Docker Hub.
+The Makefile includes a build target to push the ```infoblox-cni-daemon``` and ```infoblox-cni-install``` container images to your Docker Hub.
 To do that, you need to first setup the following environment variable:
 
 ```
