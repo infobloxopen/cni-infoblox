@@ -2,17 +2,18 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: kube-cni-cfg
+  name: infoblox-cni-cfg
   namespace: kube-system
   labels:
     tier: node
-    app: kube-cni-cfg
+    app: infoblox-cni-cfg
 data:
+  ## Network Config file contents##
   00-infoblox-ipam.conf: |
     {
     "name": "ipam-test",
-    "type": "bridge",
-    "bridge":"cni01",
+    "type": "macvlan",
+    "master":"eth0",
     "ipam": {
         "type": "infoblox",
         "subnet": "10.0.0.0/24",
@@ -24,19 +25,19 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-cni-install
+  name: infoblox-cni-install
   namespace: kube-system
   labels:
     tier: node
-    k8s-app: kube-cni-install
+    k8s-app: infoblox-cni-install
 spec:
   selector:
       matchLabels:
-        name: kube-cni-install
+        name: infoblox-cni-install
   template:
     metadata:
       labels:
-        name: kube-cni-install
+        name: infoblox-cni-install
     spec:
       containers:
       - name: install-cni
@@ -53,7 +54,7 @@ spec:
       volumes:
         - name: conf-loc
           configMap:
-                name: kube-cni-cfg
+                name: infoblox-cni-cfg
                 items:
                 - key: 00-infoblox-ipam.conf
                   path: 00-infoblox-ipam.conf
@@ -67,4 +68,3 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
     type: RollingUpdate
-
