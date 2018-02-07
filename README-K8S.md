@@ -150,7 +150,9 @@ The daemonset should be created before starting the plugin. A docker image is av
 The above command will create a daemonset in kubernetes cluster. It will install infoblox plugin binary and network configuration file
 in the locations ``/opt/cni/bin`` and ``/etc/cni/net.d`` respectively. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-install) and used by the yaml file.
 For making any changes in network configuration we can change the network config file contents part in the  infoblox-cni-install.yaml(shown below) and do 
-``kubectl apply -f infoblox-cni-install.yaml``.
+``kubectl apply -f infoblox-cni-install.yaml`` or by changing the configmap ``kubectl edit configmap infoblox-cni-cfg --namespace=kube-system``.
+
+NOTE: It takes approx. 1 minute to reflect the configmap changes using configmap edit command.
 
 ```
 ## Network Config file contents##
@@ -166,11 +168,12 @@ For making any changes in network configuration we can change the network config
         "network-view": "cni_view"
         }
     }
-  ```
+```
 
 Note:- If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in 
        lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example
        filename is given as  00-infoblox-ipam.conf.
+
 Usage
 -----
 For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
