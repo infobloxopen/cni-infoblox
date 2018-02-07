@@ -31,10 +31,9 @@ For details on CNI configuration in general, refer [here](https://github.com/con
 
 To instruct CNI to execute the Infoblox IPAM plugin for a particular network, specify "infoblox" as the IPAM "type"
 in the CNI network configuration file (netconf). CNI configuration files in a kubernetes environment is typically
-located in ```/etc/cni/net.d``` . If there are multiple CNI configuration files in the directory, the first one in 
-lexicographic order of file name is used. So make sure to name the netconf file with proper order. 
+located in ```/etc/cni/net.d``` . 
 
-For example (/etc/cni/net.d/01-infoblox-ipam.conf):
+For example (/etc/cni/net.d/00-infoblox-ipam.conf):
 
 ```
 {
@@ -53,12 +52,8 @@ For example (/etc/cni/net.d/01-infoblox-ipam.conf):
     }
 }
 ```
-Note : The following type of networks are supported out of the box:
- ```
-       bridge
-       ipvlan
-       macvlan
-```  
+Note : To run macvlan network, the promiscuous mode in master interface(say eth0) should be enabled on each node in kubernetes cluster.
+It can be done by the command ``ip link set eth0 promisc on`` . The promiscuous mode should be enabled on the network which is used by the kubernetes cluster nodes.
 
 The following are the IPAM attributes:
 - "type" (Required): specifies the plugin type and is also the file name of the plugin executable.
@@ -76,9 +71,25 @@ Other Infoblox specific attributes that are not shown in the example configurati
 - "network-container" (Optional):Subnets will be allocated from this container if subnet is not specified in network config file(default "172.18.0.0/16").To have multiple subnet add comma separated subnet. (ex. "192.168.0.0/24,192.169.0.0/24")
 - "prefix-length" (Optional): Instead of specifying a "subnet", the driver can be instructed to allocate a network of prefix length (integer) from within a network container (CIDR). 
 
-Infoblox IPAM Driver Configuration
-----------------------------------
-The Infoblox IPAM Driver is comprised of two components:
+Infoblox CNI IPAM Plugin 
+========================
+
+Features
+--------
+- Implementation of config map to enable automatic deployment of network configuration file and plugin on each node.
+
+- User can give gateway in the format of 0.0.0.x when subnet not giving through the configuration file.
+
+- Given type of networks are supported out of the box: ``bridge, ipvlan, macvlan`` . 
+  
+Limitations
+-------
+- Currently only supports IPv4 notIPv6.
+- Network configuration file name should not be change(00infoblox-ipam.conf).  
+
+Plugin Components
+---------------
+
 - Infoblox IPAM Plugin (infoblox):
   This is the plugin executable specified as the IPAM type in the netconf. This is executed by CNI as a network
 plugin and, by default in a kubernetes environment, is located in the ```/opt/cni/bin``` directory.
@@ -86,11 +97,12 @@ plugin and, by default in a kubernetes environment, is located in the ```/opt/cn
   This is the component that interfaces with Infoblox to perform the IPAM functions. This is typically deployed
 as a kubernetes daemonset on each node.
 
-Running the IPAM Daemon
------------------------
+IPAM Daemon Configuration
+------------------------
 The IPAM Daemon accepts the following command line arguments, which specifies Infoblox Grid settings, IPAM Driver
 settings and IPAM Policy settings respectively. Each one of the IPAM Policy settings is the fallback that take
-effect when the same setting have not been specified in the network configuration file.
+effect when the same setting have not been specified in the network configuration file. The following settings
+can be configured in the file ``infoblox-daemonset.yaml`` .
 
 ```
 ## Infoblox Grid Settings ##
@@ -123,21 +135,30 @@ effect when the same setting have not been specified in the network configuratio
 ```
 NOTE:WAPI Version should be 2.3 or above
 
-It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kubernetes cluster. A yaml file (infoblox-daemonset.yaml) is used to create the daemonset in kubernetes cluster
-and can be done by the following command : ``kubectl create -f infoblox-daemonset.yaml`` . The daemonset should be created
-before starting the driver. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-daemon) and used by the yaml file.
 
-Running the IPAM Plugin and Network Config Daemon
--------------------------------------------------
-The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network config file to install into respective directories as mentioned above, Which will be taken care by the Daemon and only you have to run the Daemon. Here you can modify Network config file, Once you modified you should delete ``kubectl delete -f infoblox-cni-install.yaml`` the Daemon and recreate ``kubectl create -f infoblox-cni-install.yaml`` it then the changes to network config will be applied.
+How do we install Infoblox CNI Plugin ?
+--------------------------------------
+```
+    kubectl create -f infoblox-daemonset.yaml
+```
+It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kubernetes cluster.
+The daemonset should be created before starting the plugin. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-daemon) and used by the infoblox-daemonset.yaml file.
+ 
+ ```
+     kubectl create -f infoblox-cni-install.yaml
+ ``` 
+The above command will create a daemonset in kubernetes cluster. It will install infoblox plugin binary and network configuration file
+in the locations ``/opt/cni/bin`` and ``/etc/cni/net.d`` respectively. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-install) and used by the yaml file.
+For making any changes in network configuration we can change the network config file contents part in the  infoblox-cni-install.yaml(shown below) and do 
+``kubectl apply -f infoblox-cni-install.yaml``.
 
 ```
-## Network Config file ##
-00-infoblox-ipam.conf: |
+## Network Config file contents##
+  00-infoblox-ipam.conf: |
     {
     "name": "ipam-test",
-    "type": "bridge",
-    "bridge":"cni01",
+    "type": "macvlan",
+    "master":"eth0",
     "ipam": {
         "type": "infoblox",
         "subnet": "10.0.0.0/24",
@@ -146,10 +167,10 @@ The IPAM Plugin and Network Config Daemon contains IPAM plugin and Network confi
         }
     }
   ```
-It is recommended that the Infoblox IPAM Plugin and Network Config Daemon be run as a daemonset in kubernetes cluster. A yaml file (infoblox-cni-install.yaml) is used to create the daemonset in kubernetes cluster
-and can be done by the following command : ``kubectl create -f infoblox-cni-install.yaml`` . The daemonset should be created
-before starting the driver. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-install) and used by the yaml file.
 
+Note:- If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in 
+       lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example
+       filename is given as  00-infoblox-ipam.conf.
 Usage
 -----
 For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
