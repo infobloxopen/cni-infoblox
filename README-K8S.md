@@ -168,7 +168,7 @@ NOTE: It takes approx. 1 minute to reflect the configmap changes using configmap
         "network-view": "cni_view"
         }
     }
-  ```
+```
 
 Note:- If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in 
        lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example
