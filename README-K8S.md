@@ -173,6 +173,7 @@ NOTE: It takes approx. 1 minute to reflect the configmap changes using configmap
 Note:- If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in 
        lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example
        filename is given as  00-infoblox-ipam.conf.
+
 Usage
 -----
 For a detailed description of an example, which is more of an Infoblox IPAM Daemon in multi host rkt deployment(not in kubernetes), refer [here](https://community.infoblox.com/t5/Community-Blog/CNI-Networking-and-IPAM/ba-p/7828).
