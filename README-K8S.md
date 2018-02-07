@@ -76,15 +76,14 @@ Infoblox CNI IPAM Plugin
 
 Features
 --------
-- Implementation of config map to enable automatic deployment of network configuration file and plugin on each node.
-
+- IPAM support for pods/containers deployed by Kubernetes through NIOS.
+- Supports all key network drivers: bridge, ipvlan, macvlan.  
 - User can give gateway in the format of 0.0.0.x when subnet not giving through the configuration file.
-
-- Given type of networks are supported out of the box: ``bridge, ipvlan, macvlan`` . 
+- Automatic deployment and update: Use of config map to enable automatic deployment and update of network configuration file and plugin on each node. 
   
 Limitations
 -------
-- Currently only supports IPv4 notIPv6.
+- Currently only supports IPv4 not IPv6.
 - Network configuration file name should not be change(00infoblox-ipam.conf).  
 
 Plugin Components
@@ -115,7 +114,7 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 --wapi-password string
 	Infoblox WAPI Password (default "")
 --wapi-version string
-	Infoblox WAPI Version (default "2.0")
+	Infoblox WAPI Version (default "2.3")
 --ssl-verify string
 	Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate. (default "false")
 
@@ -133,7 +132,7 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
-NOTE:WAPI Version should be 2.3 or above
+NOTE: WAPI Version should be 2.3 or above
 
 
 How do we install Infoblox CNI Plugin ?
