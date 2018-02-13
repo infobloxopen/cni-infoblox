@@ -44,7 +44,7 @@ spec:
       - name: install-cni
         image: infoblox/infoblox-cni-install
 		   env:
-            - name: CONF-FILE-NAME
+            - name: CONF_FILE_NAME
               valueFrom:
                 configMapKeyRef:
                    name: infoblox-cni-cfg
@@ -62,9 +62,6 @@ spec:
         - name: conf-loc
           configMap:
                 name: infoblox-cni-cfg
-                items:
-                - key: 00-infoblox-ipam.conf
-                  path: 00-infoblox-ipam.conf
         - name: host-cni-conf
           hostPath:
             path: /etc/cni/net.d

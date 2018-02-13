@@ -16,7 +16,7 @@ fi;
 LTIME=`stat -c %Z /install/config/..data/$CONF_FILE_NAME`
 while true
 do
-   ATIME=`stat -c %Z /install/config/..data/"$CONF_FILE_NAME"`
+   ATIME=`stat -c %Z /install/config/..data/$CONF_FILE_NAME`
 
    if [[ "$ATIME" != "$LTIME" ]]
    then
