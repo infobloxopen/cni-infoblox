@@ -43,7 +43,7 @@ spec:
       containers:
       - name: install-cni
         image: infoblox/infoblox-cni-install
-		   env:
+	env:
             - name: CONF_FILE_NAME
               valueFrom:
                 configMapKeyRef:
