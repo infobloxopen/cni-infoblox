@@ -8,8 +8,9 @@ metadata:
     tier: node
     app: infoblox-cni-cfg
 data:
+  ipam_conf_file_name: 00-infoblox-ipam.conf
   ## Network Config file contents##
-  key-conf-fl: 00-infoblox-ipam.conf
+  ##This key should match the value of the key 'ipam_conf_file_name'##
   00-infoblox-ipam.conf: |
     {
     "name": "ipam-test",
@@ -43,12 +44,12 @@ spec:
       containers:
       - name: install-cni
         image: infoblox/infoblox-cni-install
-		   env:
+		env:
             - name: CONF_FILE_NAME
               valueFrom:
                 configMapKeyRef:
                    name: infoblox-cni-cfg
-                   key: key-conf-fl
+                   key: ipam_conf_file_name
         command: [ "/install/install-cni.sh" ]
         volumeMounts:
         - name: conf-loc
