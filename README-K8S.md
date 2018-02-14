@@ -155,8 +155,10 @@ For making any changes in network configuration we can change the network config
 NOTE: It takes approx. 1 minute to reflect the configmap changes using configmap edit command.
 
 ```
-## Network Config file contents##
-  00-infoblox-ipam.conf: |
+ipam_conf_file_name: infoblox-ipam.conf
+  ## Network Config file contents##
+  ##This key should match the value of the key 'ipam_conf_file_name'##
+  infoblox-ipam.conf: |
     {
     "name": "ipam-test",
     "type": "macvlan",
@@ -172,7 +174,7 @@ NOTE: It takes approx. 1 minute to reflect the configmap changes using configmap
 
 Note:- If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in 
        lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example
-       filename is given as  00-infoblox-ipam.conf.
+       filename is given as  infoblox-ipam.conf which should match the value of the key ```ipam_conf_file_name```.
 
 Usage
 -----
