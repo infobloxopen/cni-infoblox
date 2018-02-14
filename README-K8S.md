@@ -157,7 +157,7 @@ NOTE: It takes approx. 1 minute to reflect the configmap changes using configmap
 ```
 ipam_conf_file_name: infoblox-ipam.conf
   ## Network Config file contents##
-  ##This key should match the value of the key 'ipam_conf_file_name'##
+  ## This key should match the value of the key 'ipam_conf_file_name'##
   infoblox-ipam.conf: |
     {
     "name": "ipam-test",
