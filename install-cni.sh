@@ -12,16 +12,15 @@ if [ -w "/host/etc/cni/net.d/" ]; then
     echo "Wrote netconf to /host/etc/cni/net.d/";
 fi;
 
-# Polls for file change at /install/config/..data/00-infoblox-ipam.conf
-
-LTIME=`stat -c %Z /install/config/..data/00-infoblox-ipam.conf`
+# Polls for file change at /install/config/..data/$CONF_FILE_NAME
+LTIME=`stat -c %Z /install/config/..data/$CONF_FILE_NAME`
 while true
 do
-   ATIME=`stat -c %Z /install/config/..data/00-infoblox-ipam.conf`
+   ATIME=`stat -c %Z /install/config/..data/$CONF_FILE_NAME`
 
    if [[ "$ATIME" != "$LTIME" ]]
    then
-    cp -f /install/config/00-infoblox-ipam.conf /host/etc/cni/net.d/;
+    cp -f /install/config/$CONF_FILE_NAME /host/etc/cni/net.d/;
     LTIME=$ATIME
    fi
    sleep 5

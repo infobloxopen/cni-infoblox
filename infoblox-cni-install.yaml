@@ -8,8 +8,10 @@ metadata:
     tier: node
     app: infoblox-cni-cfg
 data:
+  ipam_conf_file_name: infoblox-ipam.conf
   ## Network Config file contents##
-  00-infoblox-ipam.conf: |
+  ##This key should match the value of the key 'ipam_conf_file_name'##
+  infoblox-ipam.conf: |
     {
     "name": "ipam-test",
     "type": "macvlan",
@@ -42,6 +44,12 @@ spec:
       containers:
       - name: install-cni
         image: infoblox/infoblox-cni-install
+        env:
+        - name: CONF_FILE_NAME
+          valueFrom:
+                configMapKeyRef:
+                   name: infoblox-cni-cfg
+                   key: ipam_conf_file_name
         command: [ "/install/install-cni.sh" ]
         volumeMounts:
         - name: conf-loc
@@ -55,9 +63,6 @@ spec:
         - name: conf-loc
           configMap:
                 name: infoblox-cni-cfg
-                items:
-                - key: 00-infoblox-ipam.conf
-                  path: 00-infoblox-ipam.conf
         - name: host-cni-conf
           hostPath:
             path: /etc/cni/net.d
