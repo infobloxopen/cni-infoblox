@@ -176,7 +176,7 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
 		requestBuilder, requestor)
 
-	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", "KubernetesEngineID")
+	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", "CNIEngineID")
 
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }
