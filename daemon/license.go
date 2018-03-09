@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	ibclient "github.com/infobloxopen/infoblox-go-client"
@@ -10,25 +9,26 @@ import (
 
 //Checks for cloud license in nios
 func CheckForCloudLicense(objMgr *ibclient.ObjectManager) {
-	err := checkLicense(objMgr, "cloud")
+	flag, err := CheckLicense(objMgr, "cloud")
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Fatal("error", err)
+	}
+	if !flag {
+		logrus.Fatal("Cloud License not available in Infoblox Appliance. Update and try again..")
 	}
 }
 
-func checkLicense(objMgr *ibclient.ObjectManager, licenseType string) (err error) {
+func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string) (flag bool, err error) {
 	license, err := objMgr.GetLicense()
-
 	if err != nil {
-		return
+		return flag, err
 	}
 	for _, v := range license {
 		if strings.ToLower(v.Licensetype) == licenseType {
-			if v.ExpirationStatus == "DELETED" || v.ExpirationStatus == "EXPIRED" {
-				err = fmt.Errorf("%s license is not applied/deleted for the grid. Apply the license and try again", licenseType)
-				return
+			if v.ExpirationStatus != "DELETED" && v.ExpirationStatus != "EXPIRED" {
+				flag = true
 			}
 		}
 	}
-	return
+	return flag, err
 }
