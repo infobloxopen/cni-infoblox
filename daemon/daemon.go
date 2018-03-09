@@ -176,9 +176,9 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 	requestor := &ibclient.WapiHttpRequestor{}
 	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
 		requestBuilder, requestor)
+	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", "CNIEngineID")
 
-	objMgr := ibclient.NewObjectManager(conn, "CNI", "CNIEngineID")
-
+	CheckForCloudLicense(objMgr)
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }
 
