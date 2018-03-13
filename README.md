@@ -11,15 +11,20 @@ For a detailed description of the driver, including a step by step deployment ex
 
 Prerequisite
 ------------
+
+A NIOS DDI Appliance with cloud automation License.
+
 To use the plugin, you need access to the Infoblox DDI product. For evaluation purposes, you can download a
 virtual version of the product from the [Infoblox Download Center](https://www.infoblox.com/infoblox-download-center).
-Alternatively, if you are an existing Infoblox customer, you can download it from the support site.
+Alternatively, if you are an existing Infoblox customer, you can download it from the support site and must be applied with
+cloud automation licensing from the CLI using ```set temp_license```.
 
 Refer to [CONFIG.md](CONFIG.md) for details on vNIOS configuration.
 
-Build
------
-For dependencies and build instructions, refer to [BUILD.md](BUILD.md) .
+Development
+-----------
+
+* Build - For dependencies and build instructions, refer to [BUILD.md](BUILD.md) .
 
 Configuring Supported container runtimes
 ----------------------------------------
