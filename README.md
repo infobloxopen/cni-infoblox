@@ -16,15 +16,9 @@ A NIOS DDI Appliance with cloud automation License.
 
 To use the plugin, you need access to the Infoblox DDI product. For evaluation purposes, you can download a
 virtual version of the product from the [Infoblox Download Center](https://www.infoblox.com/infoblox-download-center).
-Alternatively, if you are an existing Infoblox customer, you can download it from the support site and must be applied with
-cloud automation licensing from the CLI using ```set temp_license```.
+Alternatively, if you are an existing Infoblox customer, you can download it from the support site and you can also assign temp license by login into the Infoblox DDI appliance console with this command ```set temp_license```.
 
 Refer to [CONFIG.md](CONFIG.md) for details on vNIOS configuration.
-
-Development
------------
-
-* Build - For dependencies and build instructions, refer to [BUILD.md](BUILD.md) .
 
 Configuring Supported container runtimes
 ----------------------------------------
@@ -35,3 +29,7 @@ Refer to the following links to configure each container runtime to use infoblox
 * Rocket - With the Rocket(rkt), deallocate of IP does not work. Until rocket has latest cni, the infoblox plugin 
 support will not be provided. Still configuring rocket to use infoblox cni plugin can be read at [README-rkt.md](README-rkt.md)
 
+Development
+-----------
+
+* Build - For dependencies and build instructions, refer to [BUILD.md](BUILD.md) .
