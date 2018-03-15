@@ -1,0 +1,17 @@
+    #vi test-app.yaml
+    apiVersion: apps/v1beta1
+    kind: Deployment
+    metadata:
+      name: test-infoblox-deployment
+    spec:
+      replicas: 2
+      template:
+        metadata:
+          labels:
+            app: test-infoblox
+        spec:
+          containers:
+          - name: test-infoblox
+            image: ianneub/network-tools
+            command: ["/bin/sh"]
+            args: ["-c", "sleep 10000; echo 'I m dying' "]
