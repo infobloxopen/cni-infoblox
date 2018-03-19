@@ -10,11 +10,11 @@ To instruct CNI to execute the Infoblox IPAM plugin for a particular network, sp
 in the CNI network configuration file (netconf). CNI configuration files in a rkt environment is typically
 localted in ```/etc/rkt/net.d```
 
-For example (/etc/rkt/net.d/10-net-1.conf):
+For example (/etc/rkt/net.d/infoblox-ipam.conf):
 
 ```
 {
-    "name": "net-1",
+    "name": "ipam-test",
     "ipam": {
         "type": "infoblox",
         "subnet": "172.18.1.0/24",
@@ -107,12 +107,12 @@ For a detailed description of an example use of the Infoblox IPAM Daemon in mult
 Before you can start using the driver, the Infobblox IPAM Daemon must be started using one of the methods
 described in the section "Running the IPAM Daemon" above.
 
-Assuming that you have deployed the example network configuration file (10-net-1.conf) shown in the
-"CNI Configuration", which specifies the configuration for a network called "net-1", the following command starts a
-rkt container attaching to the "net-1" network:
+Assuming that you have deployed the example network configuration file (infoblox-ipam.conf) shown in the
+"CNI Configuration", which specifies the configuration for a network called "ipam-test", the following command starts a
+rkt container attaching to the "ipam-test" network:
 
 ```
-rkt run --interactive --net=net-1 quay.io/fermayo/ubuntu
+rkt run --interactive --net=ipam-test quay.io/fermayo/ubuntu
 ```
 
 When the container comes up, verify using the "ifconfig" command that IP has been successfully provisioned

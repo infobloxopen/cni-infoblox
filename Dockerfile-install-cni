@@ -1,7 +1,24 @@
-FROM busybox
+FROM golang:1.8 as builder
 
-ADD infoblox-plugin /install/bin/infoblox
+ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
+
+COPY . ${SRC}
+WORKDIR ${SRC}
+
+RUN go build -o bin/infoblox-plugin ./plugin
+
+
+FROM alpine:3.5
+
+ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
+COPY --from=builder ${SRC}/bin/infoblox-plugin /install/bin/infoblox
 
 ADD scripts/install-cni.sh /install/install-cni.sh
 RUN chmod +x /install/bin/infoblox
 RUN chmod +x /install/install-cni.sh
+
+ARG GIT_SHA
+ARG BUILD_DATE
+
+LABEL GIT_SHA=$GIT_SHA \
+      BUILD_DATE=$BUILD_DATE

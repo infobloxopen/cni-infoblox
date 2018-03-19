@@ -33,11 +33,11 @@ To instruct CNI to execute the Infoblox IPAM plugin for a particular network, sp
 in the CNI network configuration file (netconf). CNI configuration files in a kubernetes environment is typically
 located in ```/etc/cni/net.d``` . 
 
-For example (/etc/cni/net.d/00-infoblox-ipam.conf):
+For example (/etc/cni/net.d/infoblox-ipam.conf):
 
 ```
 {
-    "name": "infoblox-ipam",
+    "name": "ipam-test",
     "type": "macvlan",
     "master": "eth0",
     "ipam": {
@@ -133,7 +133,7 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
-NOTE:WAPI Version should be 2.3 or above
+NOTE:WAPI Version should be 2.5 or above
 
 
 How do we install Infoblox CNI Plugin ?
