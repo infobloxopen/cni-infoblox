@@ -14,7 +14,7 @@ For example (/etc/rkt/net.d/infoblox-ipam.conf):
 
 ```
 {
-    "name": "ipam-test",
+    "name": "infoblox-ipam-network",
     "ipam": {
         "type": "infoblox",
         "subnet": "172.18.1.0/24",
@@ -108,11 +108,11 @@ Before you can start using the driver, the Infobblox IPAM Daemon must be started
 described in the section "Running the IPAM Daemon" above.
 
 Assuming that you have deployed the example network configuration file (infoblox-ipam.conf) shown in the
-"CNI Configuration", which specifies the configuration for a network called "ipam-test", the following command starts a
-rkt container attaching to the "ipam-test" network:
+"CNI Configuration", which specifies the configuration for a network called "infoblox-ipam-network", the following command starts a
+rkt container attaching to the "infoblox-ipam-network" network:
 
 ```
-rkt run --interactive --net=ipam-test quay.io/fermayo/ubuntu
+rkt run --interactive --net=infoblox-ipam-network quay.io/fermayo/ubuntu
 ```
 
 When the container comes up, verify using the "ifconfig" command that IP has been successfully provisioned

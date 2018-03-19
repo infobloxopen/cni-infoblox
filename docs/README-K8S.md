@@ -37,7 +37,7 @@ For example (/etc/cni/net.d/infoblox-ipam.conf):
 
 ```
 {
-    "name": "ipam-test",
+    "name": "infoblox-ipam-network",
     "type": "macvlan",
     "master": "eth0",
     "ipam": {
@@ -160,7 +160,7 @@ ipam_conf_file_name: infoblox-ipam.conf
   ## This key should match the value of the key 'ipam_conf_file_name'##
   infoblox-ipam.conf: |
     {
-    "name": "ipam-test",
+    "name": "infoblox-ipam-network",
     "type": "macvlan",
     "master":"eth0",
     "ipam": {
