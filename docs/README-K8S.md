@@ -21,7 +21,7 @@ kubelet - 1.9.0-00
 kubernetes-cni - 0.6.0-00
 
 CNI source used to build the plugin and daemon - 0.6.0
-Wapi version - 2.3
+Wapi version - 2.5
 ```
 
 CNI Configuration
@@ -115,7 +115,7 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 --wapi-password string
 	Infoblox WAPI Password (default "")
 --wapi-version string
-	Infoblox WAPI Version (default "2.0")
+	Infoblox WAPI Version (default "2.5")
 --ssl-verify string
 	Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate. (default "false")
 
@@ -139,13 +139,13 @@ NOTE:WAPI Version should be 2.5 or above
 How do we install Infoblox CNI Plugin ?
 --------------------------------------
 ```
-    kubectl create -f infoblox-daemonset.yaml
+    kubectl create -f k8s/infoblox-daemonset.yaml
 ```
 It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kubernetes cluster.
 The daemonset should be created before starting the plugin. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-daemon) and used by the infoblox-daemonset.yaml file.
  
  ```
-     kubectl create -f infoblox-cni-install.yaml
+     kubectl create -f k8s/infoblox-cni-install.yaml
  ``` 
 The above command will create a daemonset in kubernetes cluster. It will install infoblox plugin binary and network configuration file
 in the locations ``/opt/cni/bin`` and ``/etc/cni/net.d`` respectively. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-install) and used by the yaml file.
@@ -206,7 +206,7 @@ For example :
 
 ```
 ```
-kubectl create -f test-app.yaml
+kubectl create -f example/test-app.yaml
 ```
 The command above starts test-infoblox-deployment with two pods. 
 
