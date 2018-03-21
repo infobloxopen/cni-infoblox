@@ -1,25 +1,38 @@
 # Requires DOCKERHUB_ID and VERSION environment variables
-DAEMON_NAME=infoblox-cni-daemon
-PLUGIN_NAME=infoblox-cni-install
-DAEMON_IMAGE=$(DOCKERHUB_ID)/$(DAEMON_NAME):$(VERSION) 
-PLUGIN_IMAGE=$(DOCKERHUB_ID)/$(PLUGIN_NAME):$(VERSION)
-
-# Container Images...
-
-docker-image:
-	docker build -t $(DAEMON_IMAGE) -f Dockerfile-cni-daemon .
-	docker build -t $(PLUGIN_IMAGE) -f Dockerfile-cni-plugin-installer .
-
-# Push image to user's docker hub. NOTE: requires DOCKERHUB_ID environment variable
-push: docker-image
-	docker push $(DAEMON_IMAGE)
-	docker push $(PLUGIN_IMAGE)
+ifeq ($(DOCKERHUB_ID),)
+    ifeq ($(VERSION),)
+        DAEMON_IMAGE=infoblox-cni-daemon
+        PLUGIN_IMAGE=infoblox-cni-install
+    else
+        DAEMON_IMAGE=infoblox-cni-daemon:${VERSION}
+        PLUGIN_IMAGE=infoblox-cni-install:${VERSION}
+    endif
+else
+    ifeq ($(VERSION),)
+        DAEMON_IMAGE=${DOCKERHUB_ID}/infoblox-cni-daemon
+        PLUGIN_IMAGE=${DOCKERHUB_ID}/infoblox-cni-install
+    else
+        DAEMON_IMAGE=${DOCKERHUB_ID}/infoblox-cni-daemon:${VERSION}
+        PLUGIN_IMAGE=${DOCKERHUB_ID}/infoblox-cni-install:${VERSION}
+    endif
+endif
 
 # Delete local docker images
-clean-images:
-	docker rmi ${DAEMON_IMAGE} || true
-	docker rmi ${PLUGIN_IMAGE} || true
+clean:
+	docker rmi -f ${DAEMON_IMAGE} || true
+	docker rmi -f ${PLUGIN_IMAGE} || true
 			
 # Ensure go dependencies
 deps:
 	dep ensure
+
+# Build container Images...
+
+build: clean deps
+	docker build -t $(DAEMON_IMAGE) -f Dockerfile-cni-daemon .
+	docker build -t $(PLUGIN_IMAGE) -f Dockerfile-cni-plugin-installer .
+
+# Push image to user's docker hub. NOTE: requires DOCKERHUB_ID environment variable
+push: build
+	docker push $(DAEMON_IMAGE)
+	docker push $(PLUGIN_IMAGE)

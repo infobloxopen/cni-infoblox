@@ -56,7 +56,7 @@ func LoadConfig() (config *Config) {
 	config = new(Config)
 
 	flag.StringVar(&config.GridHost, "grid-host", "192.168.124.200", "IP of Infoblox Grid Host")
-	flag.StringVar(&config.WapiVer, "wapi-version", "2.0", "Infoblox WAPI Version.")
+	flag.StringVar(&config.WapiVer, "wapi-version", "2.5", "Infoblox WAPI Version.")
 	flag.StringVar(&config.WapiPort, "wapi-port", "443", "Infoblox WAPI Port.")
 	flag.StringVar(&config.WapiUsername, "wapi-username", "", "Infoblox WAPI Username")
 	flag.StringVar(&config.WapiPassword, "wapi-password", "", "Infoblox WAPI Password")
