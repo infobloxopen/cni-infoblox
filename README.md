@@ -37,4 +37,10 @@ Development
 Use Existing Network
 --------------------
 
-To use existing network at NIOS, The network should be assigned with EA`s
+By default the network is created using network configuration(infoblox-ipam.conf), When you want to use existing networks at the NIOS just update EA`s(Network Name,CMP Typ,Cloud API Owned,Tenant ID) to the pre existing networks.
+
+For example: Assume your network name is "ABCNET"  in network configuration, Set EA`s like below.
+
+```
+"Network Name" =  "ABCNET"
+```
