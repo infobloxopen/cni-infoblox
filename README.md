@@ -33,3 +33,8 @@ Development
 -----------
 
 * Build - For dependencies and build instructions, refer to [BUILD.md](docs/BUILD.md) .
+
+Use Existing Network
+--------------------
+
+To use existing network at NIOS, The network should be assigned with EA`s
