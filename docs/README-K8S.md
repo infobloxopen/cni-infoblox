@@ -112,8 +112,6 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 	Infoblox WAPI Port (default "443")
 --wapi-username string
 	Infoblox WAPI Username (default "")
---wapi-password string
-	Infoblox WAPI Password (default "")
 --wapi-version string
 	Infoblox WAPI Version (default "2.5")
 --ssl-verify string
@@ -133,6 +131,29 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
+
+wapi-password should be passed via kubernetes secrets. Refer to [K8s-Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for more details.
+
+```
+Assume 'infoblox' is your wapi password so base64 encode it.
+
+$ echo -n "infoblox" | tr -d '\n' | base64
+aW5mb2Jsb3g=
+
+You have to update this base64 encoded value in k8s/infoblox-daemonset.yaml in below mentioned section.
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: infoblox-secret
+  namespace: kube-system
+type: Opaque
+data:
+  wapi-password: <UPDATE YOUR ENCODED VALUE>
+
+```
+
 NOTE:WAPI Version should be 2.5 or above
 
 
@@ -143,6 +164,8 @@ How do we install Infoblox CNI Plugin ?
 ```
 It is recommended that the Infoblox IPAM Daemon be run as a daemonset in kubernetes cluster.
 The daemonset should be created before starting the plugin. A docker image is available in Docker Hub, which packages the daemon binary in an image (infoblox/infoblox-cni-daemon) and used by the infoblox-daemonset.yaml file.
+
+NOTE: Don't forget to update base64 encoded wapi-password in infoblox-daemonset.yaml
  
  ```
      kubectl create -f k8s/infoblox-cni-install.yaml
@@ -183,28 +206,30 @@ For a detailed description of an example, which is more of an Infoblox IPAM Daem
 To use the driver start the daemonset as described in the section "Running the IPAM Daemon" above. Put the netconf file and plugin binary
 in specified location as described in "CNI Configuration" and "Infoblox IPAM Driver Configuration" section respectively.
 
-Test the pod connectivity by deploying apps in the kubernetes cluster.
-For example : 
-```
-    #vi test-app.yaml
-    apiVersion: apps/v1beta1
-    kind: Deployment
-    metadata:
-      name: test-infoblox-deployment
-    spec:
-      replicas: 2
-      template:
-        metadata:
-          labels:
-            app: test-infoblox
-        spec:
-          containers:
-          - name: test-infoblox
-            image: ianneub/network-tools
-            command: ["/bin/sh"]
-            args: ["-c", "sleep 10000; echo 'I m dying' "]
+Test the pod connectivity by deploying apps in the kubernetes cluster. use this below example and save it in *test-app.yaml*
 
 ```
+#vi test-app.yaml
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: test-infoblox-deployment
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: test-infoblox
+    spec:
+      containers:
+      - name: test-infoblox
+        image: ianneub/network-tools
+        command: ["/bin/sh"]
+        args: ["-c", "sleep 10000; echo 'I m dying' "]
+
+```
+
+
 ```
 kubectl create -f example/test-app.yaml
 ```

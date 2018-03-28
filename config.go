@@ -20,6 +20,7 @@ import (
 	"net"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"os"
 )
 
 const (
@@ -59,7 +60,7 @@ func LoadConfig() (config *Config) {
 	flag.StringVar(&config.WapiVer, "wapi-version", "2.5", "Infoblox WAPI Version.")
 	flag.StringVar(&config.WapiPort, "wapi-port", "443", "Infoblox WAPI Port.")
 	flag.StringVar(&config.WapiUsername, "wapi-username", "", "Infoblox WAPI Username")
-	flag.StringVar(&config.WapiPassword, "wapi-password", "", "Infoblox WAPI Password")
+	config.WapiPassword = os.Getenv("WAPI_PASSWORD")
 	flag.StringVar(&config.SslVerify, "ssl-verify", "false", "Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate.")
 	flag.StringVar(&config.NetworkView, "network-view", "default", "Infoblox Network View")
 	flag.StringVar(&config.NetworkContainer, "network-container", "172.18.0.0/16", "Subnets will be allocated from this container if subnet is not specified in network config file")
