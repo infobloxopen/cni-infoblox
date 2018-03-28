@@ -45,10 +45,10 @@ spec:
       - name: install-cni
         image: infoblox/infoblox-cni-install
         Lifecycle:
-		    preStop:
-			    exec:
-				  command: ["rm", "-rf", "/host/opt/cni/bin/infoblox"]
-		env:
+              preStop:
+                   exec:
+                     command: ["rm", "-rf", "/host/opt/cni/bin/infoblox"]
+        env:
         - name: CONF_FILE_NAME
           valueFrom:
                 configMapKeyRef:
