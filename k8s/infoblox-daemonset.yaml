@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -25,7 +26,6 @@ spec:
           - "--grid-host=192.168.124.200"
           - "--wapi-port=443"
           - "--wapi-username=admin"
-          - "--wapi-password=infoblox"
           - "--wapi-version=2.5"
           - "--socket-dir=/run/cni"
           - "--driver-name=infoblox"
@@ -33,7 +33,22 @@ spec:
           - "--network-view=default"
           - "--network-container=192.168.0.0/24,192.169.0.0/24"
           - "--prefix-length=25"
+        env:
+          - name: WAPI_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: infoblox-secret
+                key: wapi-password
       volumes:
         - name: socket-dir
           hostPath:
             path: /run/cni
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: infoblox-secret
+  namespace: kube-system
+type: Opaque
+data:
+  wapi-password: aW5mb2Jsb3g=

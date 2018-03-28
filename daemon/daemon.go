@@ -176,8 +176,8 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 	requestor := &ibclient.WapiHttpRequestor{}
 	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
 		requestBuilder, requestor)
-	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", "CNIEngineID")
 
+	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", "CNIEngineID")
 	CheckForCloudLicense(objMgr)
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }
@@ -187,7 +187,9 @@ func runDaemon(config *Config) {
 	// ensure the RPC server does not get scheduled onto those
 	runtime.LockOSThread()
 
-	log.Printf("Config is '%v'\n", *config)
+	configToLog := *config
+	configToLog.WapiPassword = "******"
+	log.Printf("Config is '%v'\n", configToLog)
 
 	driverSocket := NewDriverSocket(config.SocketDir, config.DriverName)
 	l, err := getListener(driverSocket)

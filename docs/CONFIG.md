@@ -33,7 +33,7 @@ can be defined using the create-ea-defs tool in the infoblox/docker-ipam-tools d
 
 To run create-ea-defs:
 ```
-docker run infoblox/container-ipam-tool:0.0.1 create-ea-defs --debug --grid-host 10.120.21.150 --wapi-username=admin --wapi-password=infoblox --wapi-version=2.3
+docker run infoblox/container-ipam-tool:0.0.1 create-ea-defs --debug --grid-host <infoblox-appliance-ip> --wapi-username=<username> --wapi-password=<password> --wapi-version=2.3
 ```
 
 To use the configuration file for create-ea-defs:
