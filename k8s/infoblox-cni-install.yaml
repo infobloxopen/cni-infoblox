@@ -44,7 +44,11 @@ spec:
       containers:
       - name: install-cni
         image: infoblox/infoblox-cni-install
-        env:
+        Lifecycle:
+		    preStop:
+			    exec:
+				  command: ["rm", "-rf", "/host/opt/cni/bin/infoblox"]
+		env:
         - name: CONF_FILE_NAME
           valueFrom:
                 configMapKeyRef:
