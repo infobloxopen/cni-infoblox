@@ -8,6 +8,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type license string
+
+const (
+	cloud license = "Cloud Network Automation"
+)
+
 //Checks for cloud license in nios
 func CheckForCloudLicense(objMgr *ibclient.ObjectManager) {
 	err := CheckLicense(objMgr, "cloud")
@@ -28,6 +34,14 @@ func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string) (err error
 			}
 		}
 	}
-	err = fmt.Errorf("%s License not available/applied. Apply the license for the grid and try again", licenseType)
+	err = fmt.Errorf("%s License not available/applied. Apply the license for the grid and try again", GetLicenseType(licenseType))
+	return
+}
+
+func GetLicenseType(p_licenseType string) (r_licenseType license) {
+	switch p_licenseType {
+	case "cloud":
+		r_licenseType = cloud
+	}
 	return
 }
