@@ -248,7 +248,7 @@ For example: Assume your network name is "ABCNET"  in network configuration, Set
 
 ```
 "Network Name" =  "ABCNET"
-"CMP Type" =  "ABCCMPTYPE"
+"CMP Type" =  "Kubernetes"
 "Cloud API Owned" =  "True"
-"Tenant ID" =  "ABCTENANTID"
+"Tenant ID" =  "Testing"
 ```

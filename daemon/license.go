@@ -8,10 +8,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type license string
+type licenseName string
 
 const (
-	cloud license = "Cloud Network Automation"
+	cloud licenseName = "Cloud Network Automation"
 )
 
 //Checks for cloud license in nios
@@ -34,14 +34,14 @@ func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string) (err error
 			}
 		}
 	}
-	err = fmt.Errorf("%s License not available/applied. Apply the license for the grid and try again", GetLicenseType(licenseType))
+	err = fmt.Errorf("%s License not available/applied. Apply the license for the grid and try again", GetLicenseName(licenseType))
 	return
 }
 
-func GetLicenseType(p_licenseType string) (r_licenseType license) {
-	switch p_licenseType {
+func GetLicenseName(licenseType string) (licenseName licenseName) {
+	switch licenseType {
 	case "cloud":
-		r_licenseType = cloud
+		licenseName = cloud
 	}
 	return
 }
