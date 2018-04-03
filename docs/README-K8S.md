@@ -237,3 +237,18 @@ The command above starts test-infoblox-deployment with two pods.
 
 When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned from Infoblox. 
 To verify the pod connectivity, ping the 2nd pod from inside the 1st pod.
+
+Use Existing Network
+--------------------
+
+By default required network view & network will be created based on configuration available at infoblox-ipam.conf. if you want to use existing network view & networks available at the NIOS update below Extensible Attributes (EA`s).
+``Network Name, CMP Type, Cloud API Owned, Tenant ID ``.
+
+For example: Assume your network name is "ABCNET"  in network configuration, Set EA`s like below.
+
+```
+"Network Name" =  "ABCNET"
+"CMP Type" =  "Kubernetes"
+"Cloud API Owned" =  "True"
+"Tenant ID" =  "Testing"
+```
