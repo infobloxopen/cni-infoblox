@@ -44,7 +44,7 @@ spec:
       containers:
       - name: install-cni
         image: infoblox/infoblox-cni-install
-        Lifecycle:
+        lifecycle:
               preStop:
                    exec:
                      command: ["rm", "-rf", "/host/opt/cni/bin/infoblox"]
