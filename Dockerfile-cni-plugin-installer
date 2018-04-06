@@ -16,8 +16,7 @@ COPY --from=builder ${SRC}/bin/infoblox-plugin /install/bin/infoblox
 RUN apk add --no-cache bash jq
 
 ADD scripts/install-cni.sh /install/install-cni.sh
-RUN chmod +x /install/bin/infoblox
-RUN chmod +x /install/install-cni.sh
+RUN chmod +x /install/bin/infoblox /install/install-cni.sh
 
 ARG GIT_SHA
 ARG BUILD_DATE
