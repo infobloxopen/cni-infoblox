@@ -13,8 +13,7 @@ FROM alpine:3.5
 ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
 COPY --from=builder ${SRC}/bin/infoblox-plugin /install/bin/infoblox
 
-RUN apk add --no-cache bash
-RUN apk add --no-cache jq
+RUN apk add --no-cache bash jq
 
 ADD scripts/install-cni.sh /install/install-cni.sh
 RUN chmod +x /install/bin/infoblox
