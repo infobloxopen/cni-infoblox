@@ -9,14 +9,13 @@ CONF_FILE="${CONF_FILE_CONTAINER_PATH}/..data/${CONF_FILE_NAME}"
 
 # Validating CIDR from network configuration file
 checksubnet() {
-
-  	SUBNET=$(jq '.ipam.subnet' ${CONF_FILE} | tr -d \")  
+    SUBNET=$(jq '.ipam.subnet' ${CONF_FILE} | tr -d \")
     if [ -z $(egrep '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$' <<< $SUBNET) ]; then
         echo "Invalid CIDR mentioned in the conf file ${CONF_FILE_NAME}"
   	    if [ $1 -eq 1 ]; then # exit the script
   	        exit 255
   	    fi
-  	        return 1
+        return 1
     else
         return 0		
     fi
@@ -40,11 +39,11 @@ while true
 do    
     CURRENT_MODIFIED_TIME=$(stat -c %Z ${CONF_FILE})
     if [[ "$CURRENT_MODIFIED_TIME" != "$LAST_MODIFIED_TIME" ]]; then	    
-		checksubnet 0		     
+        checksubnet 0
         if [ $? -eq 0 ]; then
-		    echo "Network conf is modified so changing..."
+            echo "Network conf is modified so changing..."
             cp -f ${CONF_FILE_CONTAINER_PATH}/${CONF_FILE_NAME} ${CONF_FILE_HOST_PATH};
-	    	    LAST_MODIFIED_TIME=$CURRENT_MODIFIED_TIME
+            LAST_MODIFIED_TIME=$CURRENT_MODIFIED_TIME
         fi
    fi
    sleep 30
