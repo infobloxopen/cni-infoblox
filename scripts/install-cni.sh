@@ -45,6 +45,6 @@ do
             cp -f ${CONF_FILE_CONTAINER_PATH}/${CONF_FILE_NAME} ${CONF_FILE_HOST_PATH};
             LAST_MODIFIED_TIME=$CURRENT_MODIFIED_TIME
         fi
-   fi
-   sleep 30
+    fi
+    sleep 30
 done
