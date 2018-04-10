@@ -33,3 +33,9 @@ Development
 -----------
 
 * Build - For dependencies and build instructions, refer to [BUILD.md](docs/BUILD.md) .
+
+Limitations
+-----------
+
+* No DNS support.
+* Should use one network view at infoblox NIOS for one deployment.
