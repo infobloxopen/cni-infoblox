@@ -21,7 +21,7 @@ checksubnet() {
   	    fi
         return 1
     fi
-        return 0
+    return 0
 }
 
 checksubnet 1
