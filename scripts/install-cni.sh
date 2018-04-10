@@ -9,16 +9,19 @@ CONF_FILE="${CONF_FILE_CONTAINER_PATH}/..data/${CONF_FILE_NAME}"
 
 # Validating CIDR from network configuration file
 checksubnet() {
-    SUBNET=$(jq '.ipam.subnet' ${CONF_FILE} | tr -d \")
+    SUBNET=$(cat ${CONF_FILE} | jq 'select(.ipam.subnet != null) | .ipam.subnet' | tr -d \")
+    # If 'subnet' key it self not provided in network conf
+    if [ -z "${SUBNET}" ] ; then
+        return 0
+    fi
     if [ -z $(egrep '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$' <<< $SUBNET) ]; then
         echo "Invalid CIDR mentioned in the conf file ${CONF_FILE_NAME}"
   	    if [ $1 -eq 1 ]; then # exit the script
   	        exit 255
   	    fi
         return 1
-    else
-        return 0		
     fi
+        return 0
 }
 
 checksubnet 1
