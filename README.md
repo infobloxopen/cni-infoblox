@@ -37,5 +37,5 @@ Development
 Limitations
 -----------
 
-* No DNS support.
-* Should use one network view at infoblox NIOS for one deployment.
+* Doesn't have Infoblox DNS support.
+* For one Kubernetes deployment only one Infoblox Network view can be used.
