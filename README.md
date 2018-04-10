@@ -33,3 +33,9 @@ Development
 -----------
 
 * Build - For dependencies and build instructions, refer to [BUILD.md](docs/BUILD.md) .
+
+Limitations
+-----------
+
+* Doesn't have Infoblox DNS support.
+* For one Kubernetes deployment only one Infoblox Network view can be used.
