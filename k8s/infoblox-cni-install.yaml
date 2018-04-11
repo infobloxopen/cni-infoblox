@@ -47,7 +47,10 @@ spec:
         lifecycle:
               preStop:
                    exec:
-                     command: ["rm", "-rf", "/host/opt/cni/bin/infoblox"]
+                     command:
+                        - sh
+                        - "-c"
+                        - "rm -rf /host/opt/cni/bin/infoblox /host/etc/cni/net.d/ipam_conf_file_name /host/etc/cni/net.d/${CONF_FILE_NAME}"
         env:
         - name: CONF_FILE_NAME
           valueFrom:
