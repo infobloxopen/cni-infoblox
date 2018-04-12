@@ -29,7 +29,7 @@ spec:
           - "--wapi-version=2.5"
           - "--socket-dir=/run/cni"
           - "--driver-name=infoblox"
-          - "--k8s-cluster-name=k8s-cluster"
+          - "--cluster-name=cluster Name"
           - "--ssl-verify=false"
           - "--network-view=default"
           - "--network-container=192.168.0.0/24,192.169.0.0/24"
