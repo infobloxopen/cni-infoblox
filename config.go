@@ -19,8 +19,9 @@ import (
 	"flag"
 	"net"
 
-	"github.com/containernetworking/cni/pkg/types"
 	"os"
+
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 const (
@@ -45,6 +46,7 @@ type DriverConfig struct {
 	DriverName       string
 	NetworkView      string
 	NetworkContainer string
+	K8sClusterName   string
 	PrefixLength     uint
 }
 
@@ -61,6 +63,7 @@ func LoadConfig() (config *Config) {
 	flag.StringVar(&config.WapiPort, "wapi-port", "443", "Infoblox WAPI Port.")
 	flag.StringVar(&config.WapiUsername, "wapi-username", "", "Infoblox WAPI Username")
 	config.WapiPassword = os.Getenv("WAPI_PASSWORD")
+	flag.StringVar(&config.K8sClusterName, "k8s-cluster-name", "", "Kubernetes Cluster Name")
 	flag.StringVar(&config.SslVerify, "ssl-verify", "false", "Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate.")
 	flag.StringVar(&config.NetworkView, "network-view", "default", "Infoblox Network View")
 	flag.StringVar(&config.NetworkContainer, "network-container", "172.18.0.0/16", "Subnets will be allocated from this container if subnet is not specified in network config file")
