@@ -34,9 +34,9 @@ type Container struct {
 
 type IBInfobloxDriver interface {
 	RequestNetworkView(netviewName string) (string, error)
-	RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error)
+	RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, name string, vmID string) (string, error)
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
-	UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error)
+	UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
 	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
 	CreateGateway(cidr string,gw net.IP,netviewName string)(string,error)
@@ -74,7 +74,7 @@ func (ibDrv *InfobloxDriver) GetAddress(netviewName string, cidr string, ipAddr 
 	return fixedAddr, err
 }
 
-func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, vmID string) (string, error) {
+func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, name string, vmID string) (string, error) {
 	var fixedAddr *ibclient.FixedAddress
 	if netviewName == "" {
 		netviewName = ibDrv.DefaultNetworkView
@@ -87,16 +87,16 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 	}
 
 	if fixedAddr == nil {
-		fixedAddr, _ = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, vmID)
+		fixedAddr, _ = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, name, vmID)
 	}
 
 	log.Printf("RequestAddress: fixedAddr result is '%s'", *fixedAddr)
 	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
 }
 
-func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddrRef string, macAddr string, vmID string) (*ibclient.FixedAddress, error) {
+func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error) {
 
-	fixedAddr, err := ibDrv.objMgr.UpdateFixedAddress(fixedAddrRef, macAddr, vmID)
+	fixedAddr, err := ibDrv.objMgr.UpdateFixedAddress(fixedAddrRef, macAddr, name, vmID)
 	if err != nil {
 		log.Printf("UpdateAddress failed with error '%s'", err)
 	}
@@ -270,7 +270,7 @@ func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName stri
 	if err == nil && gatewayIp != nil {
 		log.Println("The Gateway already created")
 	} else if gatewayIp == nil {
-		gatewayIp, err = ibDrv.objMgr.AllocateIP(netviewName, cidr, gateway, "", "")
+		gatewayIp, err = ibDrv.objMgr.AllocateIP(netviewName, cidr, gateway, "", "", "")
 		if err != nil {
 			log.Printf("Gateway creation failed with error:'%s'", err)
 		}
