@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"runtime"
+	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
@@ -44,7 +45,18 @@ func newInfoblox(drv IBInfobloxDriver) *Infoblox {
 // Allocate acquires an IP from Infoblox for a specified container.
 func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err error) {
 	conf := NetConfig{}
+
 	log.Printf("Allocate: called with args '%s'", *args)
+	/* Sample args passed in K8s
+	ContainerID: 85f177f2f1981087309589281979e1190931a9f3d7840660ac8dd9eaeb5685fb
+	Netns       /proc/2617/ns/net
+	IfName      eth0
+	Args        IgnoreUnknown=1;K8S_POD_NAMESPACE=default;K8S_POD_NAME=test-infoblox-deployment-8478849b97-p2jhp;K8S_POD_INFRA_CONTAINER_ID=<>
+	Path        /opt/macvlan/bin:/opt/cni/bin
+	StdinData   {"cniVersion":"","ipam":{"gateway":"10.0.0.1","network-view":"cni_view","subnet":"10.0.0.0/24","type":"infoblox"},"master":"eth1","name":"ipam-test","type":"macvlan"}}
+66:c2:1c:94:6e:e5}
+	 */
+
 	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
@@ -78,8 +90,16 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
 
+	// In Kubernetes to get the container name/hostname
+	containerName := ""
+	str1 := strings.Split(args.Args,"K8S_POD_NAME=")
+	if len(str1) != 1 {
+		str2 := strings.Split(str1[1],";")
+		containerName = str2[0]
+	}
+
 	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
-	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, args.ContainerID)
+	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, containerName, args.ContainerID)
 
 	log.Printf("Allocated IP: '%s'", ip)
 
@@ -92,7 +112,7 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 			return err
 		}
 
-		err = ib.updateAddress(netviewName, cidr, ip, hwAddr.String())
+		err = ib.updateAddress(netviewName, cidr, ip, hwAddr.String(), containerName)
 		if err != nil {
 			log.Printf("Problem while updating MacAddress: %s", err)
 			return err
@@ -113,13 +133,13 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 	return nil
 }
 
-func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string, macAddr string) error {
+func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string, macAddr string, name string) error {
 
 	fixedAddr, err := ib.Drv.GetAddress(netviewName, cidr, ipAddr, "")
 	if err != nil {
 		return err
 	}
-	updatedFixedAddr, err := ib.Drv.UpdateAddress(fixedAddr.Ref, macAddr, "")
+	updatedFixedAddr, err := ib.Drv.UpdateAddress(fixedAddr.Ref, macAddr, name, "" )
 	if err != nil {
 		return err
 	}
