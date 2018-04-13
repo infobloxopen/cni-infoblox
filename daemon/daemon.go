@@ -76,7 +76,6 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)
 }
 
-
 func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
 
 	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
@@ -177,7 +176,7 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 	conn, _ := ibclient.NewConnector(hostConfig, transportConfig,
 		requestBuilder, requestor)
 
-	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", "CNIEngineID")
+	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", config.ClusterName)
 	CheckForCloudLicense(objMgr)
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }

@@ -116,6 +116,8 @@ can be configured in the file ``infoblox-daemonset.yaml`` .
 	Infoblox WAPI Version (default "2.5")
 --ssl-verify string
 	Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate. (default "false")
+--cluster-name
+    User defined cluster name to identify the deployment (default "cluster-1")
 
 ## IPAM Driver Settings ##
 --socket-dir string
