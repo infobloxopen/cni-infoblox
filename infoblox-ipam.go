@@ -38,10 +38,11 @@ type IBInfobloxDriver interface {
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
 	UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
-	RequestNetwork(netconf NetConfig, netviewName string) (network string, networks []string, err error)
-	CreateGateway(cidrs []string, gw net.IP, netviewName string) (string, error)
+	RequestNetwork(netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error)
+	CreateGateway(cidr string, gw net.IP, netviewName string) (string, error)
 	GetLockOnNetView(netViewName string) (*ibclient.NetworkViewLock, error)
 	AllocateNewNetwork(netconf NetConfig, netView string) (string, error)
+	CheckAvailableIpFromNetworks(ibNetworks *[]ibclient.Network, netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error)
 }
 
 type InfobloxDriver struct {
@@ -215,8 +216,7 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName string) (network string, networks []string, err error) {
-	networks = make([]string, 100)
+func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error) {
 	var ibNetwork *ibclient.Network
 	var ibNetworks *[]ibclient.Network
 	// netviewName := netconf.IPAM.NetworkView
@@ -229,12 +229,13 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 		//networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
 		networkByName, err := ibDrv.objMgr.GetNetworks(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
 		if err != nil {
-			return "", nil, err
+			return "", err
 		}
 		if networkByName != nil {
 			ibNetworks = networkByName
-			for i, network := range *ibNetworks {
-				networks[i] = network.Cidr
+			network, err = ibDrv.CheckAvailableIpFromNetworks(ibNetworks, netconf, args, netviewName, mac)
+			if err != nil {
+				return "", err
 			}
 		} else {
 			prefixLen := ibDrv.DefaultPrefixLen
@@ -249,11 +250,10 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 	if ibNetwork != nil {
 		network = ibNetwork.Cidr
 	}
-	return network, networks, err
+	return network, err
 }
 
-func (ibDrv *InfobloxDriver) CreateGateway(cidrs []string, gw net.IP, netviewName string) (string, error) {
-	cidr := cidrs[0]
+func (ibDrv *InfobloxDriver) CreateGateway(cidr string, gw net.IP, netviewName string) (string, error) {
 	gw = gw.To4() //making sure it is only 4 bytes
 	//check for the format of gateway is in 0.0.0.x given by customer
 	//it happens when no subnet given in the conf file
@@ -327,4 +327,39 @@ func (ibDrv *InfobloxDriver) AllocateNewNetwork(netconf NetConfig, netView strin
 		subnet = ibNetwork.Cidr
 	}
 	return
+}
+func (ibDrv *InfobloxDriver) CheckAvailableIpFromNetworks(ibNetworks *[]ibclient.Network, netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error) {
+	var subnet, ip string
+	containerName := ""
+	str1 := strings.Split(args.Args, "K8S_POD_NAME=")
+	if len(str1) != 1 {
+		str2 := strings.Split(str1[1], ";")
+		containerName = str2[0]
+	}
+	for _, Network := range *ibNetworks {
+		subnet = Network.Cidr
+		log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, subnet, mac)
+		ip, err = ibDrv.RequestAddress(netviewName, subnet, "", mac, containerName, args.ContainerID)
+		if err != nil {
+			log.Printf("Error Requesting Address : '%s'\n", err)
+			//return err
+		}
+		if ip != "" {
+			network = subnet
+			break
+		}
+	}
+	// If IP is not there then creating new network from the container network
+	if ip == "" {
+		newSubnet, err := ibDrv.AllocateNewNetwork(netconf, netviewName)
+		if err != nil {
+			log.Printf("Error Requesting New Network : ", err)
+			return "", err
+		}
+		if newSubnet != "" {
+			network = newSubnet
+
+		}
+	}
+	return network, nil
 }

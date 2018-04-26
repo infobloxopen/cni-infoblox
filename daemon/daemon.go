@@ -45,7 +45,6 @@ func newInfoblox(drv IBInfobloxDriver) *Infoblox {
 // Allocate acquires an IP from Infoblox for a specified container.
 func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err error) {
 	conf := NetConfig{}
-	networks := make([]string, 100)
 	log.Printf("Allocate: called with args '%s'", *args)
 	/* Sample args passed in K8s
 		ContainerID: 85f177f2f1981087309589281979e1190931a9f3d7840660ac8dd9eaeb5685fb
@@ -64,43 +63,36 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 	cidr := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
 	netviewName := conf.IPAM.NetworkView
 	gw := conf.IPAM.Gateway
+	mac := args.IfMac
 	log.Printf("RequestNetwork: '%s', '%s'", netviewName, cidr.String())
 	netview, _ := ib.Drv.RequestNetworkView(netviewName)
 	if netview == "" {
 		return nil
 	}
 	//get lock on the network view
-	l, err := ib.Drv.GetLockOnNetView(netviewName)
+	l, err := ib.Drv.GetLockOnNetView(netview)
 	if err != nil {
 		return err
 	}
 	defer l.UnLock(false)
-	subnet, subnets, _ := ib.Drv.RequestNetwork(conf, netview)
-	if subnet == "" && subnets == nil {
+	subnet, _ := ib.Drv.RequestNetwork(conf, args, netview, mac)
+	if subnet == "" {
 		return nil
 	}
-	if subnet != "" {
-		networks[0] = subnet
-	} else {
-		for i, network := range subnets {
-			networks[i] = network
-		}
-	}
+
 	//cni is not calling gateway creation call, so it is implemented here
 	//if gateway is not provided in net conf file by customer, it wont create as for now
 	if gw != nil {
-		if _, err := ib.Drv.CreateGateway(networks, gw, netviewName); err != nil {
+		if _, err := ib.Drv.CreateGateway(subnet, gw, netviewName); err != nil {
 			return fmt.Errorf("error creating gateway:%v", err)
 		}
 	}
 
-	mac := args.IfMac
-
-	return ib.requestAddress(conf, args, result, netviewName, networks, mac)
+	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)
 }
 
-func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidrs []string, macAddr string) (err error) {
-	var cidr, ip string
+func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *current.Result, netviewName string, cidr string, macAddr string) (err error) {
+
 	// In Kubernetes to get the container name/hostname
 	containerName := ""
 	str1 := strings.Split(args.Args, "K8S_POD_NAME=")
@@ -108,35 +100,12 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 		str2 := strings.Split(str1[1], ";")
 		containerName = str2[0]
 	}
-	// allocates ips available at the network of network list
-	for _, lcidr := range cidrs {
-		log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, lcidr, macAddr)
-		ip, err = ib.Drv.RequestAddress(netviewName, lcidr, "", macAddr, containerName, args.ContainerID)
-		if err != nil {
-			log.Printf("Error Requesting Address : '%s'\n", err)
-			//return err
-		}
-		if ip != "" {
-			cidr = lcidr
-			break
-		}
-	}
-	// If IP is not there then creating new network from the container network
-	if ip == "" {
-		newSubnet, err := ib.Drv.AllocateNewNetwork(conf, netviewName)
-		if err != nil {
-			log.Printf("Error Requesting New Network : ", err)
-			return err
-		}
-		if newSubnet != "" {
-			cidr = newSubnet
-			ip, err = ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, containerName, args.ContainerID)
-			if err != nil {
-				return err
-			}
-		}
-	}
+
+	log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, cidr, macAddr)
+	ip, _ := ib.Drv.RequestAddress(netviewName, cidr, "", macAddr, containerName, args.ContainerID)
+
 	log.Printf("Allocated IP: '%s'", ip)
+
 	// As bridge plugin in CNI generates MAC address based on ip, so the daemon also generating MAC address based on
 	// ip and updating GRID host with the new MAC address
 	if conf.Type == "bridge" {
