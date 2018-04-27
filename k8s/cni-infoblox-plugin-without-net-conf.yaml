@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cni-infoblox-plugin
+  namespace: kube-system
+  labels:
+    tier: node
+    k8s-app: cni-infoblox-plugin
+spec:
+  selector:
+      matchLabels:
+        name: cni-infoblox-plugin
+  template:
+    metadata:
+      labels:
+        name: cni-infoblox-plugin
+    spec:
+      containers:
+      - name: install-cni
+        image: infoblox/cni-infoblox-plugin
+        lifecycle:
+              preStop:
+                   exec:
+                     command:
+                        - sh
+                        - "-c"
+                        - "rm -rf /host/opt/cni/bin/infoblox"
+        env:
+        - name: COPY_CONF_FILE
+          value: "False"
+        command: [ "/install/install-cni.sh" ]
+        volumeMounts:
+        - name: host-cni-bin
+          mountPath: /host/opt/cni/bin/
+      hostNetwork: true
+      volumes:
+        - name: host-cni-bin
+          hostPath:
+            path: /opt/cni/bin
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate

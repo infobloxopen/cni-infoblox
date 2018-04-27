@@ -24,30 +24,47 @@ checksubnet() {
     return 0
 }
 
-checksubnet 1
+check_and_update_conf_file() {
+
+    if [ -w "${CONF_FILE_HOST_PATH}" ]; then
+        cp -f ${CONF_FILE_CONTAINER_PATH}/* ${CONF_FILE_HOST_PATH};
+        echo "Wrote network conf to ${CONF_FILE_HOST_PATH}";
+    fi;
+
+    # Polls for file change at ${CONF_FILE}
+    LAST_MODIFIED_TIME=$(stat -c %Z ${CONF_FILE})
+    while true
+    do
+        CURRENT_MODIFIED_TIME=$(stat -c %Z ${CONF_FILE})
+        if [[ "$CURRENT_MODIFIED_TIME" != "$LAST_MODIFIED_TIME" ]]; then
+            checksubnet 0
+            if [ $? -eq 0 ]; then
+                echo "Network conf is modified so changing..."
+                cp -f ${CONF_FILE_CONTAINER_PATH}/${CONF_FILE_NAME} ${CONF_FILE_HOST_PATH};
+                LAST_MODIFIED_TIME=$CURRENT_MODIFIED_TIME
+            fi
+        fi
+        sleep 30
+    done
+}
+
 
 if [ -w "${BIN_FILE_HOST_PATH}" ]; then
     cp -f ${BIN_FILE_CONTAINER_PATH}/* ${BIN_FILE_HOST_PATH};
     echo "Wrote Infoblox CNI binaries to ${BIN_FILE_HOST_PATH}";
 fi;
 
-if [ -w "${CONF_FILE_HOST_PATH}" ]; then
-    cp -f ${CONF_FILE_CONTAINER_PATH}/* ${CONF_FILE_HOST_PATH};
-    echo "Wrote network conf to ${CONF_FILE_HOST_PATH}";
-fi;
+# If user want to have different conf in each node they can this COPY_CONF_FILE switch to 
+# to disable or enable it.
+if [ "${COPY_CONF_FILE}" = "True" -o "${COPY_CONF_FILE}" = "true" ]; then
+    checksubnet 1
 
-# Polls for file change at ${CONF_FILE}
-LAST_MODIFIED_TIME=$(stat -c %Z ${CONF_FILE})
-while true
-do    
-    CURRENT_MODIFIED_TIME=$(stat -c %Z ${CONF_FILE})
-    if [[ "$CURRENT_MODIFIED_TIME" != "$LAST_MODIFIED_TIME" ]]; then	    
-        checksubnet 0
-        if [ $? -eq 0 ]; then
-            echo "Network conf is modified so changing..."
-            cp -f ${CONF_FILE_CONTAINER_PATH}/${CONF_FILE_NAME} ${CONF_FILE_HOST_PATH};
-            LAST_MODIFIED_TIME=$CURRENT_MODIFIED_TIME
-        fi
-    fi
-    sleep 30
-done
+    check_and_update_conf_file
+else
+   # should be handled differently. Because the daemonset is moving to CrashLoopBackOff
+   # eventhough it copied plugin successfully. So sleeping indefnintly without doing anyting.
+   while true
+   do
+      sleep 500
+   done
+fi

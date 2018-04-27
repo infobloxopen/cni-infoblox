@@ -5,13 +5,13 @@ ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
 COPY . ${SRC}
 WORKDIR ${SRC}
 
-RUN go build -o bin/infoblox-plugin ./plugin
+RUN go build -o bin/cni-infoblox-plugin ./plugin
 
 
 FROM alpine:3.5
 
 ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
-COPY --from=builder ${SRC}/bin/infoblox-plugin /install/bin/infoblox
+COPY --from=builder ${SRC}/bin/cni-infoblox-plugin /install/bin/infoblox
 
 RUN apk add --no-cache bash jq
 

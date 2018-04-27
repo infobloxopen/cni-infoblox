@@ -8,15 +8,15 @@ ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
 COPY . ${SRC}
 WORKDIR ${SRC}
 
-RUN go build -o bin/infoblox-cni-daemon ./daemon
+RUN go build -o bin/cni-infoblox-daemon ./daemon
 
 
 FROM alpine:3.5
 
 ENV SRC=/go/src/github.com/infobloxopen/cni-infoblox
-COPY --from=builder ${SRC}/bin/infoblox-cni-daemon /usr/local/bin/infoblox-cni-daemon
+COPY --from=builder ${SRC}/bin/cni-infoblox-daemon /usr/local/bin/cni-infoblox-daemon
 
-ENTRYPOINT ["/usr/local/bin/infoblox-cni-daemon"]
+ENTRYPOINT ["/usr/local/bin/cni-infoblox-daemon"]
 
 ARG GIT_SHA
 ARG BUILD_DATE
