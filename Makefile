@@ -1,19 +1,19 @@
 # Requires DOCKERHUB_ID and VERSION environment variables
 ifeq ($(DOCKERHUB_ID),)
     ifeq ($(VERSION),)
-        DAEMON_IMAGE=infoblox-cni-daemon
-        PLUGIN_IMAGE=infoblox-cni-install
+        DAEMON_IMAGE=cni-infoblox-daemon
+        PLUGIN_IMAGE=cni-infoblox-plugin
     else
-        DAEMON_IMAGE=infoblox-cni-daemon:${VERSION}
-        PLUGIN_IMAGE=infoblox-cni-install:${VERSION}
+        DAEMON_IMAGE=cni-infoblox-daemon:${VERSION}
+        PLUGIN_IMAGE=cni-infoblox-plugin:${VERSION}
     endif
 else
     ifeq ($(VERSION),)
-        DAEMON_IMAGE=${DOCKERHUB_ID}/infoblox-cni-daemon
-        PLUGIN_IMAGE=${DOCKERHUB_ID}/infoblox-cni-install
+        DAEMON_IMAGE=${DOCKERHUB_ID}/cni-infoblox-daemon
+        PLUGIN_IMAGE=${DOCKERHUB_ID}/cni-infoblox-plugin
     else
-        DAEMON_IMAGE=${DOCKERHUB_ID}/infoblox-cni-daemon:${VERSION}
-        PLUGIN_IMAGE=${DOCKERHUB_ID}/infoblox-cni-install:${VERSION}
+        DAEMON_IMAGE=${DOCKERHUB_ID}/cni-infoblox-daemon:${VERSION}
+        PLUGIN_IMAGE=${DOCKERHUB_ID}/cni-infoblox-plugin:${VERSION}
     endif
 endif
 
@@ -29,8 +29,8 @@ deps:
 # Build container Images...
 
 build: clean deps
-	docker build -t $(DAEMON_IMAGE) -f Dockerfile-cni-daemon .
-	docker build -t $(PLUGIN_IMAGE) -f Dockerfile-cni-plugin-installer .
+	docker build -t $(DAEMON_IMAGE) -f Dockerfile-infoblox-daemon .
+	docker build -t $(PLUGIN_IMAGE) -f Dockerfile-infoblox-plugin .
 
 # Push image to user's docker hub. NOTE: requires DOCKERHUB_ID environment variable
 push: build

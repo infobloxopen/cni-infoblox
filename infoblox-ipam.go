@@ -27,7 +27,7 @@ import (
 
 type Container struct {
 	NetworkContainer string // CIDR of Network Container
-	NetworkView string // Network view
+	NetworkView      string // Network view
 	ContainerObj     *ibclient.NetworkContainer
 	exhausted        bool
 }
@@ -39,7 +39,7 @@ type IBInfobloxDriver interface {
 	UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
 	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
-	CreateGateway(cidr string,gw net.IP,netviewName string)(string,error)
+	CreateGateway(cidr string, gw net.IP, netviewName string) (string, error)
 }
 
 type InfobloxDriver struct {
@@ -221,9 +221,11 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 	log.Printf("RequestNetwork: IPAM.Subnet='%s'", netconf.IPAM.Subnet)
 	if netconf.IPAM.Subnet.IP != nil {
 		cidr = net.IPNet{IP: netconf.IPAM.Subnet.IP, Mask: netconf.IPAM.Subnet.Mask}
-		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr.String(), netconf.Name)
 	} else {
-		networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
+		_, ipmask, _ := net.ParseCIDR(ibDrv.Containers[0].NetworkContainer)
+		cidr = net.IPNet{IP: ipmask.IP, Mask: ipmask.Mask}
+		// There is no support for network container in this release so commenting out.
+		/* networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
 		if err != nil {
 			return "", err
 		}
@@ -236,8 +238,9 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 				prefixLen = netconf.IPAM.PrefixLength
 			}
 			ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name, netviewName)
-		}
+		} */
 	}
+	ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr.String(), netconf.Name)
 
 	log.Printf("RequestNetwork: result='%s'", ibNetwork)
 	if ibNetwork != nil {
@@ -246,21 +249,21 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName string)(string, error){
+func (ibDrv *InfobloxDriver) CreateGateway(cidr string, gw net.IP, netviewName string) (string, error) {
 
 	gw = gw.To4() //making sure it is only 4 bytes
 	//check for the format of gateway is in 0.0.0.x given by customer
 	//it happens when no subnet given in the conf file
-	if gw[0] ==0{
-		subnetIp,subnet,_:=net.ParseCIDR(cidr)
+	if gw[0] == 0 {
+		subnetIp, subnet, _ := net.ParseCIDR(cidr)
 		subnetIp = subnetIp.To4()
-		for index:=0;index<=3;index++{
-			if gw[index]==0{
-				gw[index]=subnetIp[index]
+		for index := 0; index <= 3; index++ {
+			if gw[index] == 0 {
+				gw[index] = subnetIp[index]
 			}
 		}
-		if subnet.Contains(gw)==false{
-			return "",fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'",subnet)
+		if subnet.Contains(gw) == false {
+			return "", fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'", subnet)
 
 		}
 	}
@@ -275,15 +278,16 @@ func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName stri
 			log.Printf("Gateway creation failed with error:'%s'", err)
 		}
 	}
-	return fmt.Sprintf("%s", gatewayIp),nil
+	return fmt.Sprintf("%s", gatewayIp), nil
 }
 
+// This method should be removed because there is no support for list of subnet hereafter.
 func makeContainers(containerList string) []Container {
 	var containers []Container
 
 	parts := strings.Split(containerList, ",")
 	for _, p := range parts {
-		containers = append(containers, Container{p, "",nil, false})
+		containers = append(containers, Container{p, "", nil, false})
 	}
 
 	return containers

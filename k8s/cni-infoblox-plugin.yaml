@@ -23,27 +23,28 @@ data:
         "network-view": "cni_view"
         }
     }
+
 ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: infoblox-cni-install
+  name: cni-infoblox-plugin
   namespace: kube-system
   labels:
     tier: node
-    k8s-app: infoblox-cni-install
+    k8s-app: cni-infoblox-plugin
 spec:
   selector:
       matchLabels:
-        name: infoblox-cni-install
+        name: cni-infoblox-plugin
   template:
     metadata:
       labels:
-        name: infoblox-cni-install
+        name: cni-infoblox-plugin
     spec:
       containers:
       - name: install-cni
-        image: infoblox/infoblox-cni-install
+        image: infoblox/cni-infoblox-plugin
         lifecycle:
               preStop:
                    exec:
@@ -52,6 +53,8 @@ spec:
                         - "-c"
                         - "rm -rf /host/opt/cni/bin/infoblox /host/etc/cni/net.d/ipam_conf_file_name /host/etc/cni/net.d/${CONF_FILE_NAME}"
         env:
+        - name: COPY_CONF_FILE
+          value: "True"
         - name: CONF_FILE_NAME
           valueFrom:
                 configMapKeyRef:

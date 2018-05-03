@@ -48,14 +48,14 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 	log.Printf("Allocate: called with args '%s'", *args)
 	/* Sample args passed in K8s
-	ContainerID: 85f177f2f1981087309589281979e1190931a9f3d7840660ac8dd9eaeb5685fb
-	Netns       /proc/2617/ns/net
-	IfName      eth0
-	Args        IgnoreUnknown=1;K8S_POD_NAMESPACE=default;K8S_POD_NAME=test-infoblox-deployment-8478849b97-p2jhp;K8S_POD_INFRA_CONTAINER_ID=<>
-	Path        /opt/macvlan/bin:/opt/cni/bin
-	StdinData   {"cniVersion":"","ipam":{"gateway":"10.0.0.1","network-view":"cni_view","subnet":"10.0.0.0/24","type":"infoblox"},"master":"eth1","name":"ipam-test","type":"macvlan"}}
-66:c2:1c:94:6e:e5}
-	 */
+		ContainerID: 85f177f2f1981087309589281979e1190931a9f3d7840660ac8dd9eaeb5685fb
+		Netns       /proc/2617/ns/net
+		IfName      eth0
+		Args        IgnoreUnknown=1;K8S_POD_NAMESPACE=default;K8S_POD_NAME=test-infoblox-deployment-8478849b97-p2jhp;K8S_POD_INFRA_CONTAINER_ID=<>
+		Path        /opt/macvlan/bin:/opt/cni/bin
+		StdinData   {"cniVersion":"","ipam":{"gateway":"10.0.0.1","network-view":"cni_view","subnet":"10.0.0.0/24","type":"infoblox"},"master":"eth1","name":"ipam-test","type":"macvlan"}}
+	66:c2:1c:94:6e:e5}
+	*/
 
 	if err = json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
@@ -92,9 +92,9 @@ func (ib *Infoblox) requestAddress(conf NetConfig, args *ExtCmdArgs, result *cur
 
 	// In Kubernetes to get the container name/hostname
 	containerName := ""
-	str1 := strings.Split(args.Args,"K8S_POD_NAME=")
+	str1 := strings.Split(args.Args, "K8S_POD_NAME=")
 	if len(str1) != 1 {
-		str2 := strings.Split(str1[1],";")
+		str2 := strings.Split(str1[1], ";")
 		containerName = str2[0]
 	}
 
@@ -139,7 +139,7 @@ func (ib *Infoblox) updateAddress(netviewName string, cidr string, ipAddr string
 	if err != nil {
 		return err
 	}
-	updatedFixedAddr, err := ib.Drv.UpdateAddress(fixedAddr.Ref, macAddr, name, "" )
+	updatedFixedAddr, err := ib.Drv.UpdateAddress(fixedAddr.Ref, macAddr, name, "")
 	if err != nil {
 		return err
 	}
