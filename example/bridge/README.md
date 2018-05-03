@@ -4,8 +4,8 @@ bridge network type and infoblox plugin.
 Troubleshooting step for kube-dns failure
 -----------------------------------------
 
-If kube-dns gets IP from the cni-infoblox-daemon's default network(172.18.0.0/16) as follows
-cmd:kubectl get pods -o wide --all-namespaces
+If kube-dns gets IP from the cni-infoblox-daemon's default network(172.18.0.0/16) as follows	
+cmd:"kubectl get pods -o wide --all-namespaces"
 
 ```
 kube-system kube-dns-6f4fd4bdf-hb68k 1/3 CrashLoopBackOff 19018 21d 172.18.0.2 master
