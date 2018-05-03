@@ -27,7 +27,7 @@ import (
 
 type Container struct {
 	NetworkContainer string // CIDR of Network Container
-	NetworkView string // Network view
+	NetworkView      string // Network view
 	ContainerObj     *ibclient.NetworkContainer
 	exhausted        bool
 }
@@ -38,14 +38,16 @@ type IBInfobloxDriver interface {
 	GetAddress(netviewName string, cidr string, ipAddr string, macAddr string) (*ibclient.FixedAddress, error)
 	UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
-	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
-	CreateGateway(cidr string,gw net.IP,netviewName string)(string,error)
+	RequestNetwork(netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error)
+	CreateGateway(cidr string, gw net.IP, netviewName string) (string, error)
+	GetLockOnNetView(netViewName string) (*ibclient.NetworkViewLock, error)
+	AllocateNewNetwork(netconf NetConfig, netView string) (string, error)
+	CheckAvailableIpFromNetworks(ibNetworks *[]ibclient.Network, netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error)
 }
 
 type InfobloxDriver struct {
-	objMgr     ibclient.IBObjectManager
-	Containers []Container
-
+	objMgr             ibclient.IBObjectManager
+	Containers         []Container
 	DefaultNetworkView string
 	DefaultPrefixLen   uint
 }
@@ -76,6 +78,7 @@ func (ibDrv *InfobloxDriver) GetAddress(netviewName string, cidr string, ipAddr 
 
 func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipAddr string, macAddr string, name string, vmID string) (string, error) {
 	var fixedAddr *ibclient.FixedAddress
+	var err error
 	if netviewName == "" {
 		netviewName = ibDrv.DefaultNetworkView
 	}
@@ -83,15 +86,15 @@ func (ibDrv *InfobloxDriver) RequestAddress(netviewName string, cidr string, ipA
 	if len(macAddr) == 0 {
 		log.Println("RequestAddressRequest contains empty MAC Address. '00:00:00:00:00:00' will be used.")
 	} else {
-		fixedAddr, _ = ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
+		fixedAddr, err = ibDrv.objMgr.GetFixedAddress(netviewName, cidr, ipAddr, macAddr)
 	}
 
 	if fixedAddr == nil {
-		fixedAddr, _ = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, name, vmID)
+		fixedAddr, err = ibDrv.objMgr.AllocateIP(netviewName, cidr, ipAddr, macAddr, name, vmID)
 	}
 
 	log.Printf("RequestAddress: fixedAddr result is '%s'", *fixedAddr)
-	return fmt.Sprintf("%s", fixedAddr.IPAddress), nil
+	return fmt.Sprintf("%s", fixedAddr.IPAddress), err
 }
 
 func (ibDrv *InfobloxDriver) UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error) {
@@ -143,10 +146,9 @@ func (ibDrv *InfobloxDriver) resetContainers() {
 }
 
 func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uint, name string) (network *ibclient.Network, err error) {
-	log.Printf("allocateNetworkHelper: netview='%s', prefixLen='%d', name='%s'", netview, prefixLen, name)
 	container := ibDrv.nextAvailableContainer()
 	for container != nil {
-		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer)
+		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer, container.exhausted)
 		if container.ContainerObj == nil || container.NetworkView != netview {
 			var err error
 			container.ContainerObj, err = ibDrv.createNetworkContainer(netview, container.NetworkContainer)
@@ -214,8 +216,9 @@ func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName string) (network string, err error) {
+func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error) {
 	var ibNetwork *ibclient.Network
+	var ibNetworks *[]ibclient.Network
 	// netviewName := netconf.IPAM.NetworkView
 	cidr := net.IPNet{}
 	log.Printf("RequestNetwork: IPAM.Subnet='%s'", netconf.IPAM.Subnet)
@@ -223,13 +226,17 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 		cidr = net.IPNet{IP: netconf.IPAM.Subnet.IP, Mask: netconf.IPAM.Subnet.Mask}
 		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr.String(), netconf.Name)
 	} else {
-		networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
+		//networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
+		networkByName, err := ibDrv.objMgr.GetNetworks(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
 		if err != nil {
 			return "", err
 		}
 		if networkByName != nil {
-			log.Printf("RequestNetwork: GetNetwork by name returns '%s'", *networkByName)
-			ibNetwork = networkByName
+			ibNetworks = networkByName
+			network, err = ibDrv.CheckAvailableIpFromNetworks(ibNetworks, netconf, args, netviewName, mac)
+			if err != nil {
+				return "", err
+			}
 		} else {
 			prefixLen := ibDrv.DefaultPrefixLen
 			if netconf.IPAM.PrefixLength != 0 {
@@ -246,21 +253,20 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName string)(string, error){
-
+func (ibDrv *InfobloxDriver) CreateGateway(cidr string, gw net.IP, netviewName string) (string, error) {
 	gw = gw.To4() //making sure it is only 4 bytes
 	//check for the format of gateway is in 0.0.0.x given by customer
 	//it happens when no subnet given in the conf file
-	if gw[0] ==0{
-		subnetIp,subnet,_:=net.ParseCIDR(cidr)
+	if gw[0] == 0 {
+		subnetIp, subnet, _ := net.ParseCIDR(cidr)
 		subnetIp = subnetIp.To4()
-		for index:=0;index<=3;index++{
-			if gw[index]==0{
-				gw[index]=subnetIp[index]
+		for index := 0; index <= 3; index++ {
+			if gw[index] == 0 {
+				gw[index] = subnetIp[index]
 			}
 		}
-		if subnet.Contains(gw)==false{
-			return "",fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'",subnet)
+		if subnet.Contains(gw) == false {
+			return "", fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'", subnet)
 
 		}
 	}
@@ -275,7 +281,7 @@ func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName stri
 			log.Printf("Gateway creation failed with error:'%s'", err)
 		}
 	}
-	return fmt.Sprintf("%s", gatewayIp),nil
+	return fmt.Sprintf("%s", gatewayIp), nil
 }
 
 func makeContainers(containerList string) []Container {
@@ -283,7 +289,7 @@ func makeContainers(containerList string) []Container {
 
 	parts := strings.Split(containerList, ",")
 	for _, p := range parts {
-		containers = append(containers, Container{p, "",nil, false})
+		containers = append(containers, Container{p, "", nil, false})
 	}
 
 	return containers
@@ -296,4 +302,64 @@ func NewInfobloxDriver(objMgr ibclient.IBObjectManager, networkView string, netw
 		DefaultPrefixLen:   prefixLength,
 		Containers:         makeContainers(networkContainer),
 	}
+}
+
+// Gets the lock on network view
+func (ibDrv *InfobloxDriver) GetLockOnNetView(netViewName string) (*ibclient.NetworkViewLock, error) {
+	l := &ibclient.NetworkViewLock{Name: netViewName, ObjMgr: ibDrv.objMgr.(*ibclient.ObjectManager), LockEA: EA_PLUGIN_LOCK,
+		LockTimeoutEA: EA_PLUGIN_LOCK_TIME}
+	err := l.Lock()
+	if err != nil {
+		log.Printf("Error while getting lock on Network View %s: %s", netViewName, err)
+		return l, fmt.Errorf("Error while getting lock on Network View %s: %s", netViewName, err)
+	}
+	return l, nil
+}
+
+//Allocates new network
+func (ibDrv *InfobloxDriver) AllocateNewNetwork(netconf NetConfig, netView string) (subnet string, err error) {
+	prefixLen := ibDrv.DefaultPrefixLen
+	if netconf.IPAM.PrefixLength != 0 {
+		prefixLen = netconf.IPAM.PrefixLength
+	}
+	ibNetwork, err := ibDrv.allocateNetwork(prefixLen, netconf.Name, netView)
+	if ibNetwork != nil {
+		subnet = ibNetwork.Cidr
+	}
+	return
+}
+func (ibDrv *InfobloxDriver) CheckAvailableIpFromNetworks(ibNetworks *[]ibclient.Network, netconf NetConfig, args *ExtCmdArgs, netviewName string, mac string) (network string, err error) {
+	var subnet, ip string
+	containerName := ""
+	str1 := strings.Split(args.Args, "K8S_POD_NAME=")
+	if len(str1) != 1 {
+		str2 := strings.Split(str1[1], ";")
+		containerName = str2[0]
+	}
+	for _, Network := range *ibNetworks {
+		subnet = Network.Cidr
+		log.Printf("RequestAddress: '%s', '%s', '%s'", netviewName, subnet, mac)
+		ip, err = ibDrv.RequestAddress(netviewName, subnet, "", mac, containerName, args.ContainerID)
+		if err != nil {
+			log.Printf("Error Requesting Address : '%s'\n", err)
+			//return err
+		}
+		if ip != "" {
+			network = subnet
+			break
+		}
+	}
+	// If IP is not there then creating new network from the container network
+	if ip == "" {
+		newSubnet, err := ibDrv.AllocateNewNetwork(netconf, netviewName)
+		if err != nil {
+			log.Printf("Error Requesting New Network : ", err)
+			return "", err
+		}
+		if newSubnet != "" {
+			network = newSubnet
+
+		}
+	}
+	return network, nil
 }

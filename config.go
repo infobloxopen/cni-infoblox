@@ -26,6 +26,8 @@ import (
 const (
 	HTTP_REQUEST_TIMEOUT  = 60
 	HTTP_POOL_CONNECTIONS = 10
+	EA_PLUGIN_LOCK        = "K8s-Plugin-Lock"
+	EA_PLUGIN_LOCK_TIME   = "K8s-Plugin-Lock-Time"
 )
 
 type GridConfig struct {
