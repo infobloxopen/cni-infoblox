@@ -220,7 +220,7 @@ Node 1
 ```
   infoblox-ipam.conf: |
     {
-    "name": "infoblox-ipam-network_11",
+    "name": "infoblox-ipam-network_10",
     "type": "macvlan",
     "master":"eth0",
     "ipam": {

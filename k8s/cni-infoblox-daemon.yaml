@@ -32,7 +32,7 @@ spec:
           - "--cluster-name=cluster Name"
           - "--ssl-verify=false"
           - "--network-view=default"
-          - "--network=192.168.0.0/16"
+          - "--network=172.18.0.0/16"
         env:
           - name: WAPI_PASSWORD
             valueFrom:
