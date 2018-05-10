@@ -23,15 +23,15 @@ Refer to [CONFIG.md](docs/CONFIG.md) for details on vNIOS configuration.
 * NIOS User should have the following permissions
 
 ```
-Permission         Type	Resource	                              Resource Type	      Permission
-[DHCP]	           All IPv4 DHCP Fixed Addresses/Reservations IPv4 DHCP fixed address  RW
-[DNS, DHCP, IPAM]  All Hosts	                                  Host	                  RW
-[DHCP, DNS, IPAM]  All IPv4 Host Addresses	                  IPv4 Host address	      RW
-[GRID]	           All Members	                              Member	                  RW
-[DHCP, IPAM]	       All IPv4 Networks	                          IPv4 Network	          RW
-[DHCP, IPAM]	       All Network Views	                          Network view	          RW
-[CLOUD]	           All Tenants	                              Tenant	                  RW
-[DNS]	           All DNS Views	                              DNS View	              RW
+Permission         Type	Resource	                              Resource Type	          Permission
+[DHCP]	           All IPv4 DHCP Fixed Addresses/Reservations  IPv4 DHCP fixed address   RW
+[DNS, DHCP, IPAM]  All Hosts                                   Host                      RW
+[DHCP, DNS, IPAM]  All IPv4 Host Addresses                     IPv4 Host address         RW
+[GRID]	           All Membes                                  Member                    RW
+[DHCP, IPAM]       All IPv4 Networks                           IPv4 Network              RW
+[DHCP, IPAM]       All Network Views                           Network view              RW
+[CLOUD]	           All Tenants                                 Tenant                    RW
+[DNS]	           All DNS Views                               DNS View                  RW
 
 ```
 
