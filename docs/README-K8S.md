@@ -360,3 +360,9 @@ For example: Assume your network name is "ABCNET"  in network configuration, Set
 "Cloud API Owned" =  "True"
 "Tenant ID" =  "Testing"
 ```
+
+Troubleshoot
+------------
+
+If you get a message ``` Cloud Network Automation License not available or User not having sufficient permissions.``` in the cni-infoblox-daemon log then you have to check for the
+ ``` Cloud Network Automation License ``` has aplied and also check for sufficient permissions for the NIOS User as given in the prerequisite. 
