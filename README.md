@@ -55,3 +55,9 @@ Limitations
 
 * Doesn't have Infoblox DNS support.
 * For one Kubernetes deployment only one Infoblox Network view can be used.
+
+Troubleshoot
+------------
+
+If you get a message ``` Cloud Network Automation License not available or user: abc not having sufficient permissions.``` in the cni-infoblox-daemon log then you have to check for the 
+"Cloud Network Automation License" has aplied and also check for sufficient permissions for the "NIOS User" as given in the prerequisite.
