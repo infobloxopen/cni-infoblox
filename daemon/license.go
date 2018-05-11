@@ -34,7 +34,7 @@ func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string) (err error
 			}
 		}
 	}
-	err = fmt.Errorf("%s License not available/applied. Apply the license for the grid and try again", GetLicenseName(licenseType))
+	err = fmt.Errorf("%s License not available or Infoblox WAPI user not having sufficient permissions. ", GetLicenseName(licenseType))
 	return
 }
 
