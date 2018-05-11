@@ -20,7 +20,7 @@ Alternatively, if you are an existing Infoblox customer, you can download it fro
 
 Refer to [CONFIG.md](docs/CONFIG.md) for details on vNIOS configuration.
 
-* NIOS User should have the following permissions
+* Infoblox WAPI user should have the following permissions
 
 ```
 Permission         Type	Resource	                            Resource Type        permission
@@ -59,5 +59,5 @@ Limitations
 Troubleshoot
 ------------
 
-If you get a message ``` Cloud Network Automation License not available or user: abc not having sufficient permissions.``` in the cni-infoblox-daemon log then you have to check for the 
-"Cloud Network Automation License" has aplied and also check for sufficient permissions for the "NIOS User" as given in the prerequisite.
+If you get a message ``` Cloud Network Automation License not available or Infoblox WAPI user not having sufficient permissions.``` in the cni-infoblox-daemon log then you have to check for the 
+"Cloud Network Automation License" has aplied and also check for sufficient permissions for the "Infoblox WAPI User" as given in the prerequisite.

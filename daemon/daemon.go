@@ -197,7 +197,7 @@ func getInfobloxDriver(config *Config) *InfobloxDriver {
 		requestBuilder, requestor)
 
 	objMgr := ibclient.NewObjectManager(conn, "Kubernetes", config.ClusterName)
-	CheckForCloudLicense(objMgr, config.WapiUsername)
+	CheckForCloudLicense(objMgr)
 	return NewInfobloxDriver(objMgr, config.NetworkView, config.NetworkContainer, config.PrefixLength)
 }
 

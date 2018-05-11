@@ -15,14 +15,14 @@ const (
 )
 
 //Checks for cloud license in nios
-func CheckForCloudLicense(objMgr *ibclient.ObjectManager, user string) {
-	err := CheckLicense(objMgr, "cloud", user)
+func CheckForCloudLicense(objMgr *ibclient.ObjectManager) {
+	err := CheckLicense(objMgr, "cloud")
 	if err != nil {
 		logrus.Fatal("Error while checking for cloud license: ", err)
 	}
 }
 
-func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string, user string) (err error) {
+func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string) (err error) {
 	license, err := objMgr.GetLicense()
 	if err != nil {
 		return
@@ -34,7 +34,7 @@ func CheckLicense(objMgr *ibclient.ObjectManager, licenseType string, user strin
 			}
 		}
 	}
-	err = fmt.Errorf("%s License not available or User: %s not having sufficient permissions. ", GetLicenseName(licenseType), user)
+	err = fmt.Errorf("%s License not available or Infoblox WAPI user not having sufficient permissions. ", GetLicenseName(licenseType))
 	return
 }
 
