@@ -206,7 +206,7 @@ When opting for different pod cidrs in each worker node, in that case CNI networ
 - subnet
 - gateway
 
-The name should be different because relevent network will be created in Infoblox applinaces so we can't have a network with same name and different subnet. The subnet/cidr and gatway are different because in background routes & iptables will be configured in each node for respective subnet/cidr only. 
+The name should be different because relevant network will be created in Infoblox appliances so we can't have a network with same name and different subnet. The subnet/cidr and gateway are different because in background routes & iptables will be configured in each node for respective subnet/cidr only. 
 
 User have to manually update the CNI network conf file. so use this **k8s/cni-infoblox-plugin-without-net-conf.yaml** file to deploy cni-infoblox-plugin daemonset only. It will just copy the **infoblox** plugin binary only to all the worker nodes.
 
@@ -257,7 +257,7 @@ How do we install Infoblox CNI Plugin ?
 ```
     kubectl create -f k8s/cni-infoblox-daemon.yaml
 ```
-cni-infoblox-daemon daemonset should be created before starting the plugin. It requied a docker image which is available at [infoblox/cni-infoblox-daemon](https://hub.docker.com/r/infoblox/cni-infoblox-daemon/) which has the binary in an image of cni-infoblox-daemon.
+cni-infoblox-daemon daemonset should be created before starting the plugin. It required a docker image which is available at [infoblox/cni-infoblox-daemon](https://hub.docker.com/r/infoblox/cni-infoblox-daemon/) which has the binary in an image of cni-infoblox-daemon.
 
 NOTE: Don't forget to update base64 encoded wapi-password in k8s/cni-infoblox-daemon.yaml
 
