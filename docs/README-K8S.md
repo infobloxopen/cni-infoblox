@@ -44,11 +44,8 @@ For example (/etc/cni/net.d/infoblox-ipam.conf):
         "type": "infoblox",
         "subnet": "10.0.0.0/24",
         "gateway": "10.0.0.1",
-        "routes": [
-                {"dst": "0.0.0.0/0"}
-                ],
         "network-view": "cni_view"
-        "prefix-length":"24"
+        
     }
 }
 ```
@@ -209,7 +206,7 @@ When opting for different pod cidrs in each worker node, in that case CNI networ
 - subnet
 - gateway
 
-The name should be different because relevent network will be created in Infoblox applinaces so we can't hava a network with same name and different subnet. The subnet/cidr and gatway are different because in background routes & iptables will be configured in each node for respective subnet/cidr only. 
+The name should be different because relevent network will be created in Infoblox applinaces so we can't have a network with same name and different subnet. The subnet/cidr and gatway are different because in background routes & iptables will be configured in each node for respective subnet/cidr only. 
 
 User have to manually update the CNI network conf file. so use this **k8s/cni-infoblox-plugin-without-net-conf.yaml** file to deploy cni-infoblox-plugin daemonset only. It will just copy the **infoblox** plugin binary only to all the worker nodes.
 
