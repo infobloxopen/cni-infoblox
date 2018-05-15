@@ -55,7 +55,7 @@ It can be done by the command ``ip link set eth0 promisc on`` . The promiscuous 
 The following are the IPAM attributes:
 - "type" (Required): specifies the plugin type and is also the file name of the plugin executable.
 - "subnet" (Optional): specifies the CIDR to be used for the network. This is a well-known CNI attribute and is used by the driver.
-- "gateway" (Optional): specifies the gateway for the network. This is a well-known CNI attribute and is simply passed through to CNI.
+- "gateway" (Optional): specifies the gateway for the network. This is a well-known CNI attribute and is simply passed through to CNI, If it is mentioned then the gateway is created else will not create.
 
 - "routes" (Optional): specifies the routes for the network. This is a well-known CNI attribute and is simply passed through to CNI.
 - "network-view" (Optional): specifies the Infoblox network view to use for this network. This is a Infoblox IPAM driver specific attribute.
