@@ -25,8 +25,8 @@
 [[projects]]
   name = "github.com/infobloxopen/infoblox-go-client"
   packages = ["."]
-  revision = "93fd8a5a8109b0dac5e69b99aee08da91307f263"
-  version = "v0.5.0"
+  revision = "ef7e5a93e969d6aa6ed1d3b18f93585259a0f6f7"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -147,6 +147,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "627966fee40be80b3058f1c41d136b900628d39e1034d4a33fa3b467c99e7ce6"
+  inputs-digest = "9b4d7572b61ac5b2964c539386307aec0734ff6f44705afdc329807a9f9110d5"
   solver-name = "gps-cdcl"
   solver-version = 1

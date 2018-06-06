@@ -35,7 +35,7 @@
 
 [[constraint]]
   name = "github.com/infobloxopen/infoblox-go-client"
-  version = "0.5.0"
+  version = "0.8.0"
 
 [[constraint]]
   name = "github.com/onsi/ginkgo"
