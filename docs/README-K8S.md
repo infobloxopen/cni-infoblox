@@ -21,7 +21,7 @@ kubelet - 1.9.4
 kubernetes-cni - 0.6.0-00
 
 CNI source used to build the plugin and daemon - 0.6.0
-Wapi version - 2.5
+Wapi version - 2.5 and above
 ```
 
 CNI Configuration
