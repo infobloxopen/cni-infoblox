@@ -14,14 +14,14 @@ Versions Used
 The versions installed in each node of kubernetes cluster for testing is:
 ```
 Host - Ubuntu 16.04.3 LTS (GNU/Linux 4.4.0-87-generic x86_64)
-docker - 1.13.1-0ubuntu1~16.04.2
-kubeadm - 1.9.0-00
-kubectl - 1.9.0-00
-kubelet - 1.9.0-00
+docker - 17.12.1-ce
+kubeadm - 1.9.4
+kubectl - 1.9.4
+kubelet - 1.9.4
 kubernetes-cni - 0.6.0-00
 
 CNI source used to build the plugin and daemon - 0.6.0
-Wapi version - 2.5
+Wapi version - 2.5 and above
 ```
 
 CNI Configuration
@@ -60,6 +60,9 @@ The following are the IPAM attributes:
 - "routes" (Optional): specifies the routes for the network. This is a well-known CNI attribute and is simply passed through to CNI.
 - "network-view" (Optional): specifies the Infoblox network view to use for this network. This is a Infoblox IPAM driver specific attribute.
 Other Infoblox specific attributes that are not shown in the example configuration:
+
+Note: The Gateway defined in the configuration file needs to be reserved as a reservation IP.  You should not use this reserved IP for other purpose.
+
 
 Infoblox CNI IPAM Plugin 
 ========================
@@ -302,7 +305,7 @@ ipam_conf_file_name: infoblox-ipam.conf
     }
 ```
 
-Note:- If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example      filename is given as  ```infoblox-ipam.conf``` which should match the value of the key ```ipam_conf_file_name```.
+Note: If there are multiple CNI configuration files in the kubernetes network config directory(i.e. /etc/cni/net.d), then the first one in lexicographic order of file name is used. So make sure to name the network configuration file with proper order. In the above example      filename is given as  ```infoblox-ipam.conf``` which should match the value of the key ```ipam_conf_file_name```.
 
 Usage
 -----
