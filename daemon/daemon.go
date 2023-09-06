@@ -24,6 +24,7 @@ import (
 	"net/rpc"
 	"runtime"
 	"strings"
+	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
@@ -63,26 +64,29 @@ func (ib *Infoblox) Allocate(args *ExtCmdArgs, result *current.Result) (err erro
 
 	cidr := net.IPNet{IP: conf.IPAM.Subnet.IP, Mask: conf.IPAM.Subnet.Mask}
 	netviewName := conf.IPAM.NetworkView
-	gw := conf.IPAM.Gateway
+	netCreateCheck := os.Getenv("CHECK_NETWORK")
+	// Create network only if CHECK_NETWORK environment varible is not defined or set as true
+	subnet := cidr.String()
 	log.Printf("RequestNetwork: '%s', '%s'", netviewName, cidr.String())
-	netview, _ := ib.Drv.RequestNetworkView(netviewName)
-	if netview == "" {
-		return nil
-	}
+	if len(netCreateCheck) == 0 ||  os.Getenv("CHECK_NETWORK") == "true" {
+			gw := conf.IPAM.Gateway
+			netview, _ := ib.Drv.RequestNetworkView(netviewName)
+			if netview == "" {
+				return nil
+			}
+			subnet, _ := ib.Drv.RequestNetwork(conf, netview)
+			if subnet == "" {
+				return nil
+			}
 
-	subnet, _ := ib.Drv.RequestNetwork(conf, netview)
-	if subnet == "" {
-		return nil
+			//cni is not calling gateway creation call, so it is implemented here
+			//if gateway is not provided in net conf file by customer, it wont create as for now
+			if gw != nil {
+				if _, err := ib.Drv.CreateGateway(subnet, gw, netviewName); err != nil {
+					return fmt.Errorf("error creating gateway:%v", err)
+				}
+			}
 	}
-
-	//cni is not calling gateway creation call, so it is implemented here
-	//if gateway is not provided in net conf file by customer, it wont create as for now
-	if gw != nil {
-		if _, err := ib.Drv.CreateGateway(subnet, gw, netviewName); err != nil {
-			return fmt.Errorf("error creating gateway:%v", err)
-		}
-	}
-
 	mac := args.IfMac
 
 	return ib.requestAddress(conf, args, result, netviewName, subnet, mac)

@@ -4,7 +4,7 @@ CNI IPAM Driver for Kubernetes
 Cluster setup
 -------------
 
-For setting up a kubernetes cluster one can use kubeadm which is designed to be a simple way for new users to start 
+For setting up a kubernetes cluster one can use kubeadm which is designed to be a simple way for new users to start
 trying Kubernetes out. The following links can be useful.
 [Install Kubeadm](https://kubernetes.io/docs/setup/independent/install-kubeadm) and
 [Create cluster](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm).
@@ -31,7 +31,7 @@ For details on CNI configuration in general, refer [here](https://github.com/con
 
 To instruct CNI to execute the Infoblox IPAM plugin for a particular network, specify "infoblox" as the IPAM "type"
 in the CNI network configuration file (netconf). CNI configuration files in a kubernetes environment is typically
-located in ```/etc/cni/net.d``` . 
+located in ```/etc/cni/net.d``` .
 
 For example (/etc/cni/net.d/infoblox-ipam.conf):
 
@@ -45,7 +45,7 @@ For example (/etc/cni/net.d/infoblox-ipam.conf):
         "subnet": "10.0.0.0/24",
         "gateway": "10.0.0.1",
         "network-view": "cni_view"
-        
+
     }
 }
 ```
@@ -64,7 +64,7 @@ Other Infoblox specific attributes that are not shown in the example configurati
 Note: The Gateway defined in the configuration file needs to be reserved as a reservation IP.  You should not use this reserved IP for other purpose.
 
 
-Infoblox CNI IPAM Plugin 
+Infoblox CNI IPAM Plugin
 ========================
 
 Features
@@ -74,7 +74,7 @@ Features
 - Implementation of config map to enable automatic deployment of network configuration file and plugin on each node.
 - User can give gateway in the format of 0.0.0.x when subnet not giving through the configuration file.
 
-  
+
 Limitations
 -------
 - Currently only supports IPv4 not IPv6.
@@ -94,7 +94,7 @@ Plugin Components
   This is the component that interfaces with Infoblox to perform the IPAM functions. This is typically deployed as a kubernetes daemonset (cni-infoblox-daemon) on each node.
 
 **CNI Infoblox IPAM Plugin (infoblox):**
-  This is the plugin executable specified as the IPAM type in the netconf. This is executed by CNI along with other network plugin it is located in the ```/opt/cni/bin``` directory. This is 
+  This is the plugin executable specified as the IPAM type in the netconf. This is executed by CNI along with other network plugin it is located in the ```/opt/cni/bin``` directory. This is
 typically deployed as a kubernetes daemonset (cni-infoblox-plugin) on each node.
 
 CNI Infoblox daemon Configuration
@@ -128,6 +128,7 @@ This Infoblox daemon accepts the following command line arguments, which specifi
 --network string
         Network cidr to be used to assign ip address for pods if cidr info is not provided in cni network conf file ( default "172.18.0.0/16" )
 ```
+We can configure the daemon to skip the network creation and validation step, in case you already have the network created in InfoBlox. This can be done by setting CHECK_NETWORK environment variable in infoblox-daemon daemonset to "false". 
 
 wapi-password should be passed via kubernetes secrets. Refer to [K8s-Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for more details.
 
@@ -204,12 +205,12 @@ A network automatically allocated by CNI Infoblox daemon if subnet is not metion
 
 **Unique CIDR for pod on each node**
 
-When opting for different pod cidrs in each worker node, in that case CNI network conf on each node will be different especially the below 3 parameters should be different 
+When opting for different pod cidrs in each worker node, in that case CNI network conf on each node will be different especially the below 3 parameters should be different
 - name
 - subnet
 - gateway
 
-The name should be different because relevant network will be created in Infoblox appliances so we can't have a network with same name and different subnet. The subnet/cidr and gateway are different because in background routes & iptables will be configured in each node for respective subnet/cidr only. 
+The name should be different because relevant network will be created in Infoblox appliances so we can't have a network with same name and different subnet. The subnet/cidr and gateway are different because in background routes & iptables will be configured in each node for respective subnet/cidr only.
 
 User have to manually update the CNI network conf file. so use this **k8s/cni-infoblox-plugin-without-net-conf.yaml** file to deploy cni-infoblox-plugin daemonset only. It will just copy the **infoblox** plugin binary only to all the worker nodes.
 
@@ -265,7 +266,7 @@ cni-infoblox-daemon daemonset should be created before starting the plugin. It r
 NOTE: Don't forget to update base64 encoded wapi-password in k8s/cni-infoblox-daemon.yaml
 
 **CNI Infoblox plugin**
- 
+
 cni-infoblox-plugin daemonset can be deployed in 2 ways with,
 
 	1) infoblox plugin + CNI network configuration file
@@ -273,7 +274,7 @@ cni-infoblox-plugin daemonset can be deployed in 2 ways with,
 	2) infoblox plugin only
 			kubectl create -f k8s/cni-infoblox-plugin-without-net-conf.yaml
 
-Any of the above commands will create a cni-infoblox-plugin daemonset in kubernetes cluster. It required a docker image which is available at [infoblox/cni-infoblox-plugin](https://hub.docker.com/r/infoblox/cni-infoblox-plugin/) It will install infoblox plugin binary and network configuration file(if used k8s/cni-infoblox-plugin.yaml) in the locations ``/opt/cni/bin`` and ``/etc/cni/net.d`` respectively in all the worker nodes. If k8s/cni-infoblox-plugin-without-net-conf.yaml used it will copy infoblox plugin binary only. 
+Any of the above commands will create a cni-infoblox-plugin daemonset in kubernetes cluster. It required a docker image which is available at [infoblox/cni-infoblox-plugin](https://hub.docker.com/r/infoblox/cni-infoblox-plugin/) It will install infoblox plugin binary and network configuration file(if used k8s/cni-infoblox-plugin.yaml) in the locations ``/opt/cni/bin`` and ``/etc/cni/net.d`` respectively in all the worker nodes. If k8s/cni-infoblox-plugin-without-net-conf.yaml used it will copy infoblox plugin binary only.
 
 For making any changes in CNI network configuration we can change the network config file contents part in the cni-infoblox-plugin (shown below)
 
@@ -341,9 +342,9 @@ spec:
 ```
 kubectl create -f example/test-app.yaml
 ```
-The command above starts test-infoblox-deployment with two pods. 
+The command above starts test-infoblox-deployment with two pods.
 
-When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned from Infoblox. 
+When the pods comes up, verify using the "ifconfig" inside the pod to check that IP has been successfully provisioned from Infoblox.
 To verify the pod connectivity, ping the 2nd pod from inside the 1st pod.
 
 Use Existing Network

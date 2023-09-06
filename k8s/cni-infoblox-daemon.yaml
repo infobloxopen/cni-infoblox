@@ -34,6 +34,8 @@ spec:
           - "--network-view=default"
           - "--network=172.18.0.0/16"
         env:
+          - name: CHECK_NETWORK
+            value: "true"
           - name: WAPI_PASSWORD
             valueFrom:
               secretKeyRef:
